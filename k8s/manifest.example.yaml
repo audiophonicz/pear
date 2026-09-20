@@ -1,84 +1,161 @@
-# Example K3s manifest for PEAR. Adjust image, ingress host/class, and TLS
-# secret/issuer references to match your cluster before applying.
-# PEAR is stateless (all session/server data lives in browser localStorage),
-# so no PersistentVolumeClaim is needed.
+# PEAR - Plex Entity AddedAt Relocator
+# Companion tool to PASTA: https://github.com/cglatot/pasta
+# https://github.com/audiophonicz/pear
+
+# Mirrors this cluster's pastaplex_manifest.yaml conventions (Gateway API HTTPRoute,
+# not Ingress; app.kubernetes.io/name labeling; Reloader annotation; empty resources
+# left for you to size). Swap the hostname/gateway refs for your own cluster.
+
+# Unlike PASTA's image (public on Docker Hub), PEAR's image lives in a private GHCR
+# package, so the Deployment below needs imagePullSecrets. Create it once per namespace:
+#   kubectl create secret docker-registry ghcr-audiophonicz \
+#     --docker-server=ghcr.io \
+#     --docker-username=audiophonicz \
+#     --docker-password=<PAT with read:packages> \
+#     -n pearplex-ns
+
+#cat <<"EOF" | kubectl apply -f -
+#pear-namespace.yml
 apiVersion: v1
 kind: Namespace
 metadata:
   name: pearplex-ns
 ---
+#pear-deployment.yml
 apiVersion: apps/v1
 kind: Deployment
 metadata:
+  annotations:
+    reloader.stakater.com/auto: "true"
+  labels:
+    app.kubernetes.io/name: pear
   name: pear
   namespace: pearplex-ns
-  labels:
-    app: pear
 spec:
   replicas: 1
   selector:
     matchLabels:
-      app: pear
+      app.kubernetes.io/name: pear
+  strategy:
+    type: Recreate
   template:
     metadata:
       labels:
-        app: pear
+        app.kubernetes.io/name: pear
     spec:
+      automountServiceAccountToken: true
+      imagePullSecrets:
+      - name: ghcr-audiophonicz
       containers:
-        - name: pear
-          image: ghcr.io/audiophonicz/pear:latest
-          ports:
-            - containerPort: 80
-          resources:
-            requests:
-              cpu: 10m
-              memory: 32Mi
-            limits:
-              cpu: 200m
-              memory: 128Mi
-          readinessProbe:
-            httpGet:
-              path: /
-              port: 80
-            initialDelaySeconds: 2
-          livenessProbe:
-            httpGet:
-              path: /
-              port: 80
-            initialDelaySeconds: 5
+      - name: pear
+        image: ghcr.io/audiophonicz/pear:latest
+        imagePullPolicy: IfNotPresent
+        livenessProbe:
+          failureThreshold: 3
+          periodSeconds: 10
+          successThreshold: 1
+          httpGet:
+            path: /
+            port: 80
+        ports:
+        - containerPort: 80
+          protocol: TCP
+        readinessProbe:
+          failureThreshold: 3
+          periodSeconds: 10
+          successThreshold: 1
+          httpGet:
+            path: /
+            port: 80
+        resources: {}
+        startupProbe:
+          failureThreshold: 3
+          periodSeconds: 10
+          successThreshold: 1
+          httpGet:
+            path: /
+            port: 80
+        terminationMessagePath: /dev/termination-log
+        terminationMessagePolicy: File
+      dnsPolicy: ClusterFirst
+      hostname: pear
+      restartPolicy: Always
+      schedulerName: default-scheduler
+      terminationGracePeriodSeconds: 30
 ---
+#pear-svc.yml
 apiVersion: v1
 kind: Service
 metadata:
-  name: pear
+  labels:
+    app.kubernetes.io/name: pear
+  name: pear-svc
   namespace: pearplex-ns
 spec:
-  selector:
-    app: pear
   ports:
-    - port: 80
-      targetPort: 80
+  - port: 80
+    protocol: TCP
+    targetPort: 80
+  selector:
+    app.kubernetes.io/name: pear
+  sessionAffinity: None
+  type: ClusterIP
 ---
-apiVersion: networking.k8s.io/v1
-kind: Ingress
+#pear-redirect_httproute.yml
+apiVersion: gateway.networking.k8s.io/v1
+kind: HTTPRoute
 metadata:
-  name: pear
+  name: pear-redirect
   namespace: pearplex-ns
-  annotations:
-    # e.g. cert-manager.io/cluster-issuer: letsencrypt-prod
 spec:
-  ingressClassName: traefik
+  parentRefs:
+  - name: main-gateway
+    namespace: gateway-system
+    sectionName: web          # Only attach to HTTP listener
+
+  hostnames:
+  - "pear.k3s.example.com"
+
   rules:
-    - host: pear.example.internal
-      http:
-        paths:
-          - path: /
-            pathType: Prefix
-            backend:
-              service:
-                name: pear
-                port:
-                  number: 80
-  # tls:
-  #   - hosts: ["pear.example.internal"]
-  #     secretName: pear-tls
+  - matches:
+    - path:
+        type: PathPrefix
+        value: /
+    filters:
+    - type: RequestRedirect
+      requestRedirect:
+        scheme: https
+        statusCode: 301
+---
+#pear-route_httproute.yml
+apiVersion: gateway.networking.k8s.io/v1
+kind: HTTPRoute
+metadata:
+  name: pear-route
+  namespace: pearplex-ns
+  labels:
+    app.kubernetes.io/name: pear
+    app.kubernetes.io/instance: pear
+spec:
+  parentRefs:
+  - name: main-gateway
+    namespace: gateway-system
+    sectionName: websecure     # Only attach to HTTPS listener
+
+  hostnames:
+  - "pear.k3s.example.com"
+
+  rules:
+  - matches:
+    - path:
+        type: PathPrefix
+        value: /
+    backendRefs:
+    - name: pear-svc
+      port: 80
+# EOF
+
+# k delete -n pearplex-ns deploy pear
+# k delete -n pearplex-ns svc pear-svc
+# k delete -n pearplex-ns httproute pear-redirect pear-route
+# k delete ns pearplex-ns
