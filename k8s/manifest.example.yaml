@@ -2,12 +2,12 @@
 # Companion tool to PASTA: https://github.com/cglatot/pasta
 # https://github.com/audiophonicz/pear
 
-# Mirrors this cluster's pastaplex_manifest.yaml conventions (Gateway API HTTPRoute,
-# not Ingress; app.kubernetes.io/name labeling; Reloader annotation; empty resources
-# left for you to size). Swap the hostname/gateway refs for your own cluster.
+# Uses Gateway API HTTPRoute instead of Ingress, app.kubernetes.io/name labeling,
+# a Reloader annotation, and empty resources left for you to size. Swap the
+# hostname/gateway refs for your own cluster.
 
-# Unlike PASTA's image (public on Docker Hub), PEAR's image lives in a private GHCR
-# package, so the Deployment below needs imagePullSecrets. Create it once per namespace:
+# PEAR's image lives in a private GHCR package (unlike PASTA's public Docker Hub
+# image), so the Deployment below needs imagePullSecrets. Create it once per namespace:
 #   kubectl create secret docker-registry ghcr-audiophonicz \
 #     --docker-server=ghcr.io \
 #     --docker-username=audiophonicz \
