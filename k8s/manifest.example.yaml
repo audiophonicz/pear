@@ -1,36 +1,24 @@
-# PEAR - Plex Entity AddedAt Relocator
-# Companion tool to PASTA: https://github.com/cglatot/pasta
+# PEAR TOOL - Plex Entity AddedAt Relocator
+#
+# Visual tool to remove items from the Recently Added lists
+#
 # https://github.com/audiophonicz/pear
-
-# Uses Gateway API HTTPRoute instead of Ingress, app.kubernetes.io/name labeling,
-# a Reloader annotation, and empty resources left for you to size. Swap the
-# hostname/gateway refs for your own cluster.
-
-# PEAR's image lives in a private GHCR package (unlike PASTA's public Docker Hub
-# image), so the Deployment below needs imagePullSecrets. Create it once per namespace:
-#   kubectl create secret docker-registry ghcr-audiophonicz \
-#     --docker-server=ghcr.io \
-#     --docker-username=audiophonicz \
-#     --docker-password=<PAT with read:packages> \
-#     -n pearplex-ns
 
 #cat <<"EOF" | kubectl apply -f -
 #pear-namespace.yml
 apiVersion: v1
 kind: Namespace
 metadata:
-  name: pearplex-ns
+  name: pear-namespace
 ---
 #pear-deployment.yml
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  annotations:
-    reloader.stakater.com/auto: "true"
   labels:
     app.kubernetes.io/name: pear
   name: pear
-  namespace: pearplex-ns
+  namespace: pear-namespace
 spec:
   replicas: 1
   selector:
@@ -44,8 +32,6 @@ spec:
         app.kubernetes.io/name: pear
     spec:
       automountServiceAccountToken: true
-      imagePullSecrets:
-      - name: ghcr-audiophonicz
       containers:
       - name: pear
         image: ghcr.io/audiophonicz/pear:latest
@@ -90,7 +76,7 @@ metadata:
   labels:
     app.kubernetes.io/name: pear
   name: pear-svc
-  namespace: pearplex-ns
+  namespace: pear-namespace
 spec:
   ports:
   - port: 80
@@ -106,7 +92,7 @@ apiVersion: gateway.networking.k8s.io/v1
 kind: HTTPRoute
 metadata:
   name: pear-redirect
-  namespace: pearplex-ns
+  namespace: pear-namespace
 spec:
   parentRefs:
   - name: main-gateway
@@ -132,7 +118,7 @@ apiVersion: gateway.networking.k8s.io/v1
 kind: HTTPRoute
 metadata:
   name: pear-route
-  namespace: pearplex-ns
+  namespace: pear-namespace
   labels:
     app.kubernetes.io/name: pear
     app.kubernetes.io/instance: pear
@@ -155,7 +141,7 @@ spec:
       port: 80
 # EOF
 
-# k delete -n pearplex-ns deploy pear
-# k delete -n pearplex-ns svc pear-svc
-# k delete -n pearplex-ns httproute pear-redirect pear-route
-# k delete ns pearplex-ns
+# k delete -n pear-namespace deploy pear
+# k delete -n pear-namespace svc pear-svc
+# k delete -n pear-namespace httproute pear-redirect pear-route
+# k delete ns pear-namespace
