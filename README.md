@@ -62,11 +62,10 @@ docker run -d -p 8088:80 --name pear pear
 ### Kubernetes / K3s
 
 See [`k8s/manifest.example.yaml`](k8s/manifest.example.yaml) for a starting
-Deployment/Service/HTTPRoute (Gateway API) targeting a `pearplex-ns`
-namespace. PEAR is
-stateless — everything about your session (account token, server, and
-connection preferences) lives in the browser's `localStorage` — so no
-persistent volume is needed.
+Deployment/Service/HTTPRoute (Gateway API) targeting a `pear-namespace`
+namespace. PEAR is stateless — everything about your session (account token,
+server, and connection preferences) lives in the browser's `localStorage` —
+so no persistent volume is needed.
 
 ## Notes
 
