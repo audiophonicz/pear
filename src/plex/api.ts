@@ -102,13 +102,25 @@ interface RawRecentEntry {
   thumb?: string;
 }
 
-/** Mirrors the "Recently Added" hub: newest-first, across every movie/show library. */
-export async function fetchRecentlyAdded(baseUrl: string, clientId: string, token: string, limit = 100): Promise<RecentItem[]> {
+/**
+ * Recently-added items for one library section — the same per-library data source
+ * Plex's own Home dashboard hubs are built from. Fetching per-section (rather than
+ * one combined server-wide feed) matters: a single shared/capped feed lets a busy
+ * movie library crowd TV items out of the results entirely, even though they'd
+ * still rank highly within their own library's recently-added list.
+ */
+export async function fetchSectionRecentlyAdded(
+  baseUrl: string,
+  sectionId: string,
+  clientId: string,
+  token: string,
+  limit = 100,
+): Promise<RecentItem[]> {
   const params = new URLSearchParams({
     'X-Plex-Container-Start': '0',
     'X-Plex-Container-Size': String(limit),
   });
-  const url = `${baseUrl.replace(/\/$/, '')}/library/recentlyAdded?${params}&${serverAuth(clientId, token)}`;
+  const url = `${baseUrl.replace(/\/$/, '')}/library/sections/${sectionId}/recentlyAdded?${params}&${serverAuth(clientId, token)}`;
   const res = await fetch(url, { headers: { Accept: 'application/json' } });
   const data = await asJson<{ MediaContainer: { Metadata?: RawRecentEntry[] } }>(res);
   return data.MediaContainer.Metadata ?? [];

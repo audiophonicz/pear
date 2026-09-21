@@ -58,6 +58,18 @@ export function chevronDownIcon(): SVGSVGElement {
   return svg('0 0 24 24', ['M6 9l6 6 6-6']);
 }
 
+export function chevronLeftIcon(): SVGSVGElement {
+  return svg('0 0 24 24', ['M15 5l-7 7 7 7']);
+}
+
+export function chevronRightIcon(): SVGSVGElement {
+  return svg('0 0 24 24', ['M9 5l7 7-7 7']);
+}
+
+export function checkIcon(): SVGSVGElement {
+  return svg('0 0 24 24', ['M5 12.5l4.5 4.5L19 7']);
+}
+
 export function serversIcon(): SVGSVGElement {
   return svg('0 0 24 24', [
     'M4 4.5h16v5H4z',
