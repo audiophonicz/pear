@@ -30,8 +30,9 @@ body {
 
 body {
   background:
-    radial-gradient(ellipse 900px 500px at 20% 0%, var(--glow), transparent 60%),
+    radial-gradient(ellipse farthest-corner at 20% 0%, var(--glow), transparent 60%),
     var(--bg);
+  background-attachment: fixed;
   color: var(--text);
   display: flex;
   flex-direction: column;
