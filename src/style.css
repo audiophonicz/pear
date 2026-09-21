@@ -53,9 +53,8 @@ body {
 .app-content {
   flex: 1;
   width: 100%;
-  max-width: 960px;
   margin: 0 auto;
-  padding: 2rem 1rem;
+  padding: 2rem 1.5rem;
 }
 
 .card {
@@ -304,7 +303,7 @@ body {
   display: flex;
   flex-direction: column;
   gap: 0.35rem;
-  max-height: calc(var(--item-list-rows, 8) * 4.6rem);
+  max-height: 55vh;
   overflow-y: auto;
   border: 1px solid var(--border);
   border-radius: 8px;
@@ -532,8 +531,15 @@ body {
   gap: 0.6rem;
 }
 
+.relocate-instructions {
+  margin: 0;
+  font-size: 0.9rem;
+  color: var(--text-muted);
+}
+
 .relocate-mode-row {
   display: flex;
+  align-items: center;
   gap: 1.5rem;
   flex-wrap: wrap;
 }
@@ -543,6 +549,13 @@ body {
   align-items: center;
   gap: 0.4rem;
   font-size: 0.9rem;
+}
+
+.relocate-or {
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: var(--text-muted);
+  letter-spacing: 0.05em;
 }
 
 .relocate-action-row {

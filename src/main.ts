@@ -1,6 +1,5 @@
 import './style.css';
 import { clearServer, getAccountToken, getServer, signOut } from './state/session';
-import { applyMaxListItemsCssVar } from './state/settings';
 import { renderLoginView } from './views/loginView';
 import { renderServerPickerView } from './views/serverPickerView';
 import { renderLibraryView } from './views/libraryView';
@@ -8,7 +7,6 @@ import { renderHeader } from './ui/header';
 import { el, mount } from './ui/dom';
 
 const root = document.querySelector<HTMLDivElement>('#app')!;
-applyMaxListItemsCssVar();
 
 const content = el('div', { class: 'app-content' });
 const header = renderHeader({

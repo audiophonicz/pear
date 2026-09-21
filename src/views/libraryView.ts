@@ -1,13 +1,13 @@
 import { fetchSectionRecentlyAdded, fetchSections, relocateAddedAt } from '../plex/api';
 import type { RecentItem } from '../plex/types';
 import { getAccountToken, getClientId, getServer } from '../state/session';
+import { getMaxListItems } from '../state/settings';
 import { el, statusBanner } from '../ui/dom';
 import { checkIcon, chevronLeftIcon, chevronRightIcon } from '../ui/icons';
 
 type TypeFilter = 'all' | 'movie' | 'show';
 
 const CONCURRENCY = 4;
-const PER_SECTION_LIMIT = 100;
 
 // Two rows (Movies/TV), Plex-dashboard style, is the current layout. The original
 // single vertical scrolling list with All/Movies/TV chips is kept below rather than
@@ -65,6 +65,13 @@ export function renderLibraryView(): HTMLElement {
     return `${server.url}${path}?X-Plex-Token=${encodeURIComponent(token!)}`;
   }
 
+  /** The show's poster, not the episode's own screencap thumbnail. */
+  function posterPath(item: RecentItem): string | undefined {
+    if (item.type === 'episode') return item.grandparentThumb ?? item.thumb;
+    if (item.type === 'season') return item.parentThumb ?? item.thumb;
+    return item.thumb;
+  }
+
   function updateSelectedCount(): void {
     selectedCountEl.textContent = `${selected.size} selected`;
     applyButton.disabled = selected.size === 0;
@@ -95,7 +102,7 @@ export function renderLibraryView(): HTMLElement {
       const primaryTitle = isEpisodeish ? (item.grandparentTitle ?? item.title) : item.title;
       const secondary = isEpisodeish ? (item.parentTitle ?? item.title) : item.year ? String(item.year) : '';
 
-      const thumbSrc = thumbUrl(item.thumb);
+      const thumbSrc = thumbUrl(posterPath(item));
       const poster = thumbSrc
         ? (el('img', { class: 'dash-poster', attrs: { src: thumbSrc, loading: 'lazy', alt: '' } }) as HTMLImageElement)
         : el('div', { class: 'dash-poster dash-poster-empty' });
@@ -191,7 +198,7 @@ export function renderLibraryView(): HTMLElement {
           updateSelectedCount();
         });
 
-        const thumbSrc = thumbUrl(item.thumb);
+        const thumbSrc = thumbUrl(posterPath(item));
         const thumb = thumbSrc
           ? (el('img', { class: 'item-thumb', attrs: { src: thumbSrc, loading: 'lazy', alt: '' } }) as HTMLImageElement)
           : el('div', { class: 'item-thumb item-thumb-empty' });
@@ -298,8 +305,10 @@ export function renderLibraryView(): HTMLElement {
     el('div', { class: 'library-header' }, [el('h2', { class: 'title', text: server.name })]),
     bodyContainer,
     el('div', { class: 'relocate-panel' }, [
+      el('p', { class: 'relocate-instructions', text: 'To remove an item from the Recently Added lists:' }),
       el('div', { class: 'relocate-mode-row' }, [
         el('label', {}, [modeDays, el('span', { text: 'Push added date back' }), daysInput, el('span', { text: 'days' })]),
+        el('span', { class: 'relocate-or', text: 'OR' }),
         el('label', {}, [modeDate, el('span', { text: 'Set added date to' }), dateInput]),
       ]),
       el('div', { class: 'relocate-action-row' }, [selectedCountEl, applyButton]),
@@ -314,9 +323,10 @@ export function renderLibraryView(): HTMLElement {
       const movieSections = sections.filter((s) => s.type === 'movie');
       const showSections = sections.filter((s) => s.type === 'show');
 
+      const fetchLimit = getMaxListItems();
       const [movieResults, showResults] = await Promise.all([
-        Promise.all(movieSections.map((s) => fetchSectionRecentlyAdded(server.url, s.key, clientId, token, PER_SECTION_LIMIT))),
-        Promise.all(showSections.map((s) => fetchSectionRecentlyAdded(server.url, s.key, clientId, token, PER_SECTION_LIMIT))),
+        Promise.all(movieSections.map((s) => fetchSectionRecentlyAdded(server.url, s.key, clientId, token, fetchLimit))),
+        Promise.all(showSections.map((s) => fetchSectionRecentlyAdded(server.url, s.key, clientId, token, fetchLimit))),
       ]);
 
       movieItems = movieResults.flat().sort((a, b) => b.addedAt - a.addedAt);

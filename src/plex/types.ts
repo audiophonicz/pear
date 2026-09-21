@@ -61,5 +61,10 @@ export interface RecentItem {
   grandparentTitle?: string;
   year?: number;
   addedAt: number;
+  /** This item's own thumbnail (an episode's screencap, not its show's poster). */
   thumb?: string;
+  /** Season's poster — the show's poster, for a season-type item. */
+  parentThumb?: string;
+  /** Show's poster, for an episode-type item (its parent is the season, not the show). */
+  grandparentThumb?: string;
 }

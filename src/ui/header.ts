@@ -1,12 +1,14 @@
 import { el } from './dom';
-import { chevronDownIcon, gearIcon, githubIcon, helpIcon, logoutIcon, packageIcon, serversIcon } from './icons';
+import { chevronDownIcon, dockerWhaleIcon, gearIcon, githubIcon, helpIcon, logoutIcon, serversIcon } from './icons';
 import { openSettingsModal } from './settingsModal';
 import { openHelpModal } from './helpModal';
 import { fetchAccount } from '../plex/api';
 import { getAccountToken, getAccountUsername, getClientId, setAccountUsername } from '../state/session';
 
 const GITHUB_URL = 'https://github.com/audiophonicz/pear';
-const PACKAGE_URL = 'https://github.com/audiophonicz/pear/pkgs/container/pear';
+// TODO: point at the actual image registry page once one is set up; hub.docker.com
+// itself for now since there's no published image there yet.
+const DOCKER_URL = 'https://hub.docker.com';
 
 function iconLink(icon: SVGSVGElement, href: string, label: string): HTMLAnchorElement {
   return el('a', { class: 'icon-btn', attrs: { href, target: '_blank', rel: 'noopener', 'aria-label': label } }, [icon]) as HTMLAnchorElement;
@@ -109,7 +111,7 @@ export function renderHeader(opts: HeaderOpts): HeaderApi {
     el('div', { class: 'app-header-actions' }, [
       account.wrap,
       settingsBtn,
-      iconLink(packageIcon(), PACKAGE_URL, 'Container image'),
+      iconLink(dockerWhaleIcon(), DOCKER_URL, 'Docker Hub'),
       iconLink(githubIcon(), GITHUB_URL, 'GitHub repository'),
       helpBtn,
     ]),

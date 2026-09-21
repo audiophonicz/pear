@@ -28,11 +28,12 @@ export function gearIcon(): SVGSVGElement {
   ]);
 }
 
-export function packageIcon(): SVGSVGElement {
+export function dockerWhaleIcon(): SVGSVGElement {
   return svg('0 0 24 24', [
-    'M12 2.5 3 7v10l9 4.5 9-4.5V7l-9-4.5Z',
-    'M3 7l9 4.5 9-4.5',
-    'M12 11.5V21',
+    'M2.5 15.5c0-3 2.2-5.2 5.5-5.2h8c2.3 0 4 1 5.2 2.6',
+    'M21.2 12.9l1.3-1-.6 2.2.6 2-1.4-.8c-1 1.4-2.6 2.2-4.6 2.2H8c-3.3 0-5.5-1.4-5.5-3.9',
+    'M9 9.5V7.5h2v2Z',
+    'M12.5 9.5V7.5h2v2Z',
   ]);
 }
 

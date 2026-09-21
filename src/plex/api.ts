@@ -100,6 +100,8 @@ interface RawRecentEntry {
   year?: number;
   addedAt: number;
   thumb?: string;
+  parentThumb?: string;
+  grandparentThumb?: string;
 }
 
 /**
