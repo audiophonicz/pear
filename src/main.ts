@@ -1,5 +1,5 @@
 import './style.css';
-import { getAccountToken, getServer } from './state/session';
+import { clearServer, getAccountToken, getServer, signOut } from './state/session';
 import { applyMaxListItemsCssVar } from './state/settings';
 import { renderLoginView } from './views/loginView';
 import { renderServerPickerView } from './views/serverPickerView';
@@ -11,19 +11,32 @@ const root = document.querySelector<HTMLDivElement>('#app')!;
 applyMaxListItemsCssVar();
 
 const content = el('div', { class: 'app-content' });
-const shell = el('div', { class: 'app-shell' }, [renderHeader(), content]);
+const header = renderHeader({
+  onChangeServer: () => {
+    clearServer();
+    showServerPicker();
+  },
+  onLogout: () => {
+    signOut();
+    showLogin();
+  },
+});
+const shell = el('div', { class: 'app-shell' }, [header.element, content]);
 mount(root, shell);
 
 function showLogin(): void {
   content.replaceChildren(renderLoginView({ onSignedIn: showServerPicker, onManualServer: showLibrary }));
+  header.refresh();
 }
 
 function showServerPicker(): void {
   content.replaceChildren(renderServerPickerView({ onConnected: showLibrary, onManualInstead: showLogin }));
+  header.refresh();
 }
 
 function showLibrary(): void {
-  content.replaceChildren(renderLibraryView({ onDisconnected: routeInitial }));
+  content.replaceChildren(renderLibraryView());
+  header.refresh();
 }
 
 function routeInitial(): void {

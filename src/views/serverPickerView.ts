@@ -54,7 +54,7 @@ export function renderServerPickerView({ onConnected, onManualInstead }: ServerP
   const container = el('div', { class: 'card picker-card' }, [
     el('h2', { class: 'title', text: 'Select a Plex Server' }),
     listEl,
-    el('label', { class: 'checkbox-row' }, [preferLocalCheckbox, el('span', { text: 'Prefer local address' })]),
+    el('label', { class: 'checkbox-row' }, [preferLocalCheckbox, el('span', { text: 'Prefer Local Address' })]),
     statusArea,
     manualLink,
   ]);
@@ -71,12 +71,15 @@ export function renderServerPickerView({ onConnected, onManualInstead }: ServerP
         return;
       }
       const rows = devices.map((device) => {
-        const connectBtn = el('button', { class: 'btn btn-secondary', text: 'Connect' });
-        connectBtn.addEventListener('click', async () => {
-          connectBtn.disabled = true;
+        const row = el('button', { class: 'server-row', attrs: { type: 'button' } }, [
+          el('span', { class: 'server-name', text: device.name }),
+          el('span', { class: 'server-version', text: device.productVersion }),
+        ]) as HTMLButtonElement;
+        row.addEventListener('click', async () => {
+          row.disabled = true;
           statusArea.replaceChildren(statusBanner('info', `Connecting to ${device.name}…`));
           const uri = await raceConnections(device, clientId, preferLocalCheckbox.checked);
-          connectBtn.disabled = false;
+          row.disabled = false;
           if (!uri) {
             statusArea.replaceChildren(statusBanner('error', `Could not reach ${device.name} on any known address.`));
             return;
@@ -84,10 +87,7 @@ export function renderServerPickerView({ onConnected, onManualInstead }: ServerP
           setServer(uri, device.name, device.accessToken);
           onConnected();
         });
-        return el('div', { class: 'server-row' }, [
-          el('span', { class: 'server-name', text: device.name }),
-          connectBtn,
-        ]);
+        return row;
       });
       listEl.replaceChildren(...rows);
     })

@@ -1,11 +1,7 @@
 import { fetchRecentlyAdded, relocateAddedAt } from '../plex/api';
 import type { RecentItem } from '../plex/types';
-import { clearServer, getAccountToken, getClientId, getServer } from '../state/session';
+import { getAccountToken, getClientId, getServer } from '../state/session';
 import { el, statusBanner } from '../ui/dom';
-
-interface LibraryViewProps {
-  onDisconnected: () => void;
-}
 
 type TypeFilter = 'all' | 'movie' | 'show';
 
@@ -33,7 +29,7 @@ async function runWithConcurrency<T>(items: T[], limit: number, worker: (item: T
   await Promise.all(Array.from({ length: Math.min(limit, items.length) }, next));
 }
 
-export function renderLibraryView({ onDisconnected }: LibraryViewProps): HTMLElement {
+export function renderLibraryView(): HTMLElement {
   const clientId = getClientId();
   const server = getServer();
   const accountToken = getAccountToken();
@@ -183,16 +179,9 @@ export function renderLibraryView({ onDisconnected }: LibraryViewProps): HTMLEle
     );
   });
 
-  const disconnectBtn = el('button', { class: 'btn btn-ghost', text: 'Disconnect' });
-  disconnectBtn.addEventListener('click', () => {
-    clearServer();
-    onDisconnected();
-  });
-
   root.replaceChildren(
     el('div', { class: 'library-header' }, [
       el('h2', { class: 'title', text: server.name }),
-      disconnectBtn,
     ]),
     el('div', { class: 'toolbar' }, [
       searchInput,

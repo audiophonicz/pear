@@ -53,3 +53,24 @@ export function helpIcon(): SVGSVGElement {
 export function closeIcon(): SVGSVGElement {
   return svg('0 0 24 24', ['M6 6l12 12', 'M18 6 6 18']);
 }
+
+export function chevronDownIcon(): SVGSVGElement {
+  return svg('0 0 24 24', ['M6 9l6 6 6-6']);
+}
+
+export function serversIcon(): SVGSVGElement {
+  return svg('0 0 24 24', [
+    'M4 4.5h16v5H4z',
+    'M4 14.5h16v5H4z',
+    'M7.5 7h.01',
+    'M7.5 17h.01',
+  ]);
+}
+
+export function logoutIcon(): SVGSVGElement {
+  return svg('0 0 24 24', [
+    'M9.5 4.5h-4a1 1 0 0 0-1 1v13a1 1 0 0 0 1 1h4',
+    'M16 15.5l4-3.5-4-3.5',
+    'M20 12H9.5',
+  ]);
+}

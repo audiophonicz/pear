@@ -29,6 +29,7 @@ export interface PlexConnection {
 export interface PlexDevice {
   name: string;
   product: string;
+  productVersion: string;
   clientIdentifier: string;
   accessToken: string;
   owned: boolean;

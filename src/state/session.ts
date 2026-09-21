@@ -8,6 +8,7 @@ const KEYS = {
   serverName: 'pear.serverName',
   serverToken: 'pear.serverToken',
   preferLocal: 'pear.preferLocal',
+  accountUsername: 'pear.accountUsername',
 } as const;
 
 function randomId(): string {
@@ -35,6 +36,14 @@ export function getAccountToken(): string | null {
 
 export function setAccountToken(token: string): void {
   localStorage.setItem(KEYS.accountToken, token);
+}
+
+export function getAccountUsername(): string | null {
+  return localStorage.getItem(KEYS.accountUsername);
+}
+
+export function setAccountUsername(username: string): void {
+  localStorage.setItem(KEYS.accountUsername, username);
 }
 
 export function getServer(): { url: string; name: string; token: string } | null {
