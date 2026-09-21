@@ -32,23 +32,24 @@ async function asJson<T>(res: Response): Promise<T> {
 export async function startPinLogin(clientId: string): Promise<PlexPin> {
   const res = await fetch(`${ACCOUNTS_API}/pins`, {
     method: 'POST',
-    headers: { ...accountHeaders(clientId), 'X-Plex-Strong': 'true' },
+    headers: { ...accountHeaders(clientId), strong: 'true' },
   });
   return asJson<PlexPin>(res);
 }
 
+/**
+ * The auth page's device-context product is deliberately "Plex Web", not our own
+ * product name — Plex's confirmation page otherwise renders a permanent
+ * "unable to complete this request" failure for third-party device contexts.
+ * Our own X-Plex-Product header elsewhere still reports as PEAR.
+ */
 export function buildAuthLink(pin: PlexPin, clientId: string): string {
-  const params = new URLSearchParams({
-    clientID: clientId,
-    code: pin.code,
-    'context[device][product]': 'PEAR',
-  });
-  return `https://app.plex.tv/auth#?${params.toString()}`;
+  return `https://app.plex.tv/auth#?clientID=${encodeURIComponent(clientId)}&code=${encodeURIComponent(pin.code)}&context%5Bdevice%5D%5Bproduct%5D=Plex%20Web`;
 }
 
 /** Polls a single time; caller is responsible for the interval/timeout loop. */
-export async function checkPinLogin(pinId: number, clientId: string): Promise<string | null> {
-  const res = await fetch(`${ACCOUNTS_API}/pins/${pinId}`, { headers: accountHeaders(clientId) });
+export async function checkPinLogin(pinId: number, clientId: string, code: string): Promise<string | null> {
+  const res = await fetch(`${ACCOUNTS_API}/pins/${pinId}`, { headers: { ...accountHeaders(clientId), code } });
   const data = await asJson<PlexPin>(res);
   return data.authToken ?? null;
 }

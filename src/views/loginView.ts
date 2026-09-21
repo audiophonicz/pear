@@ -63,7 +63,7 @@ function renderPlexLoginPanel(onSignedIn: () => void): HTMLElement {
           return;
         }
         try {
-          const token = await checkPinLogin(pin.id, clientId);
+          const token = await checkPinLogin(pin.id, clientId, pin.code);
           if (token) {
             stopPolling();
             setAccountToken(token);
