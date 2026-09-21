@@ -19,7 +19,7 @@ export function renderHeader(): HTMLElement {
 
   return el('header', { class: 'app-header' }, [
     el('div', { class: 'app-brand' }, [
-      el('div', { class: 'app-logo-box' }, [el('img', { attrs: { src: '/favicon.svg', width: '22', height: '22', alt: '' } })]),
+      el('div', { class: 'app-logo-box' }, [el('img', { attrs: { src: '/favicon.svg', width: '33', height: '33', alt: '' } })]),
       el('span', { class: 'app-name', text: 'PEAR' }),
     ]),
     el('div', { class: 'app-header-actions' }, [

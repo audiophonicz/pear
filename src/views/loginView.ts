@@ -16,7 +16,7 @@ function renderPlexLoginPanel(onSignedIn: () => void): HTMLElement {
   let pollDeadline = 0;
 
   const statusArea = el('div', { class: 'status-area' });
-  const signInButton = el('button', { class: 'btn btn-primary', text: 'Login with Plex' });
+  const signInButton = el('button', { class: 'btn btn-primary btn-lg', text: 'Login with Plex' });
   const cancelButton = el('button', { class: 'btn btn-ghost hidden', text: 'Cancel' });
 
   const stopPolling = () => {
