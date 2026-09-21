@@ -9,11 +9,23 @@ interface LoginViewProps {
 
 const POLL_INTERVAL_MS = 1500;
 const POLL_TIMEOUT_MS = 5 * 60 * 1000;
+const POPUP_WIDTH = 600;
+const POPUP_HEIGHT = 700;
+
+function openAuthPopup(link: string): Window | null {
+  const left = window.screenX + Math.max(0, (window.outerWidth - POPUP_WIDTH) / 2);
+  const top = window.screenY + Math.max(0, (window.outerHeight - POPUP_HEIGHT) / 2);
+  const features = `width=${POPUP_WIDTH},height=${POPUP_HEIGHT},left=${left},top=${top},resizable=yes,scrollbars=yes,status=yes`;
+  // Deliberately no "noopener" here (unlike most outbound links) so we can hold a
+  // reference and close this popup ourselves once sign-in completes.
+  return window.open(link, 'pear-plex-auth', features);
+}
 
 function renderPlexLoginPanel(onSignedIn: () => void): HTMLElement {
   const clientId = getClientId();
   let pollTimer: ReturnType<typeof setInterval> | null = null;
   let pollDeadline = 0;
+  let authPopup: Window | null = null;
 
   const statusArea = el('div', { class: 'status-area' });
   const signInButton = el('button', { class: 'btn btn-primary btn-lg', text: 'Login with Plex' });
@@ -24,6 +36,8 @@ function renderPlexLoginPanel(onSignedIn: () => void): HTMLElement {
     pollTimer = null;
     signInButton.classList.remove('hidden');
     cancelButton.classList.add('hidden');
+    if (authPopup && !authPopup.closed) authPopup.close();
+    authPopup = null;
   };
 
   signInButton.addEventListener('click', async () => {
@@ -33,7 +47,12 @@ function renderPlexLoginPanel(onSignedIn: () => void): HTMLElement {
     try {
       const pin = await startPinLogin(clientId);
       const link = buildAuthLink(pin, clientId);
-      window.open(link, '_blank', 'noopener');
+      authPopup = openAuthPopup(link);
+      if (!authPopup) {
+        statusArea.replaceChildren(statusBanner('error', 'Pop-up was blocked. Allow pop-ups for this site and try again.'));
+        stopPolling();
+        return;
+      }
       statusArea.replaceChildren(statusBanner('info', 'Waiting for you to finish signing in at plex.tv…'));
 
       pollDeadline = Date.now() + POLL_TIMEOUT_MS;
