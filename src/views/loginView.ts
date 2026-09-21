@@ -1,7 +1,6 @@
-import { buildAuthLink, checkPinLogin, startPinLogin } from '../plex/api';
+import { buildAuthLink, checkPinLogin, checkServer, startPinLogin } from '../plex/api';
 import { getClientId, setAccountToken, setServer } from '../state/session';
 import { el, statusBanner } from '../ui/dom';
-import { checkServer } from '../plex/api';
 
 interface LoginViewProps {
   onSignedIn: () => void;
@@ -11,14 +10,13 @@ interface LoginViewProps {
 const POLL_INTERVAL_MS = 1500;
 const POLL_TIMEOUT_MS = 5 * 60 * 1000;
 
-export function renderLoginView({ onSignedIn, onManualServer }: LoginViewProps): HTMLElement {
+function renderPlexLoginPanel(onSignedIn: () => void): HTMLElement {
   const clientId = getClientId();
   let pollTimer: ReturnType<typeof setInterval> | null = null;
   let pollDeadline = 0;
 
   const statusArea = el('div', { class: 'status-area' });
-
-  const signInButton = el('button', { class: 'btn btn-primary', text: 'Sign in with Plex' });
+  const signInButton = el('button', { class: 'btn btn-primary', text: 'Login with Plex' });
   const cancelButton = el('button', { class: 'btn btn-ghost hidden', text: 'Cancel' });
 
   const stopPolling = () => {
@@ -68,43 +66,74 @@ export function renderLoginView({ onSignedIn, onManualServer }: LoginViewProps):
     statusArea.replaceChildren();
   });
 
-  // Manual connection: skip plex.tv entirely and talk straight to a server address + token.
-  const urlInput = el('input', { class: 'input', attrs: { type: 'text', placeholder: 'http://192.168.1.50:32400', autocomplete: 'off' } }) as HTMLInputElement;
-  const tokenInput = el('input', { class: 'input', attrs: { type: 'password', placeholder: 'X-Plex-Token', autocomplete: 'off' } }) as HTMLInputElement;
-  const manualStatus = el('div', { class: 'status-area' });
-  const manualButton = el('button', { class: 'btn btn-secondary', text: 'Connect' });
+  return el('div', { class: 'tab-panel tab-panel-center' }, [
+    el('div', { class: 'button-row' }, [signInButton, cancelButton]),
+    statusArea,
+  ]);
+}
 
-  manualButton.addEventListener('click', async () => {
+function renderManualPanel(onConnected: () => void): HTMLElement {
+  const clientId = getClientId();
+  const urlInput = el('input', { class: 'input', attrs: { type: 'text', placeholder: 'http://192.168.1.10:32400', autocomplete: 'off' } }) as HTMLInputElement;
+  const tokenInput = el('input', { class: 'input', attrs: { type: 'password', placeholder: 'X-Plex-Token', autocomplete: 'off' } }) as HTMLInputElement;
+  const statusArea = el('div', { class: 'status-area' });
+  const connectButton = el('button', { class: 'btn btn-secondary', text: 'Connect' });
+
+  connectButton.addEventListener('click', async () => {
     const url = urlInput.value.trim().replace(/\/$/, '');
     const token = tokenInput.value.trim();
     if (!url || !token) {
-      manualStatus.replaceChildren(statusBanner('error', 'Server address and token are both required.'));
+      statusArea.replaceChildren(statusBanner('error', 'Server address and token are both required.'));
       return;
     }
-    manualButton.disabled = true;
-    manualStatus.replaceChildren(statusBanner('info', 'Connecting…'));
+    connectButton.disabled = true;
+    statusArea.replaceChildren(statusBanner('info', 'Connecting…'));
     try {
       await checkServer(url, clientId, token);
       setServer(url, url, token);
-      manualButton.disabled = false;
-      onManualServer();
+      connectButton.disabled = false;
+      onConnected();
     } catch (err) {
-      manualButton.disabled = false;
-      manualStatus.replaceChildren(statusBanner('error', `Could not reach that server: ${(err as Error).message}`));
+      connectButton.disabled = false;
+      statusArea.replaceChildren(statusBanner('error', `Could not reach that server: ${(err as Error).message}`));
     }
   });
 
-  return el('div', { class: 'card login-card' }, [
-    el('h1', { class: 'title', text: 'PEAR' }),
-    el('p', { class: 'subtitle', text: 'Plex Entity AddedAt Relocator' }),
-    el('div', { class: 'button-row' }, [signInButton, cancelButton]),
-    statusArea,
-    el('div', { class: 'divider', text: 'or connect manually' }),
-    el('label', { class: 'field-label', text: 'Server address' }),
+  return el('div', { class: 'tab-panel' }, [
+    el('label', { class: 'field-label', text: 'Plex URL' }),
     urlInput,
-    el('label', { class: 'field-label', text: 'Access token' }),
+    el('label', { class: 'field-label', text: 'Plex Token' }),
     tokenInput,
-    manualButton,
-    manualStatus,
+    connectButton,
+    statusArea,
+  ]);
+}
+
+export function renderLoginView({ onSignedIn, onManualServer }: LoginViewProps): HTMLElement {
+  const plexTab = el('button', { class: 'tab-btn tab-active', text: 'Plex Login' });
+  const manualTab = el('button', { class: 'tab-btn', text: 'Manual Connection' });
+
+  const plexPanel = renderPlexLoginPanel(onSignedIn);
+  const manualPanel = renderManualPanel(onManualServer);
+  manualPanel.classList.add('hidden');
+
+  plexTab.addEventListener('click', () => {
+    plexTab.classList.add('tab-active');
+    manualTab.classList.remove('tab-active');
+    plexPanel.classList.remove('hidden');
+    manualPanel.classList.add('hidden');
+  });
+
+  manualTab.addEventListener('click', () => {
+    manualTab.classList.add('tab-active');
+    plexTab.classList.remove('tab-active');
+    manualPanel.classList.remove('hidden');
+    plexPanel.classList.add('hidden');
+  });
+
+  return el('div', { class: 'card login-card' }, [
+    el('div', { class: 'tab-row' }, [plexTab, manualTab]),
+    plexPanel,
+    manualPanel,
   ]);
 }
