@@ -17,6 +17,9 @@ your Plex Media Server, no backend required) but is an independent
 implementation with its own codebase, stack, and UI. If you like PEAR,
 go check out PASTA too.
 
+The Docker and GitHub icons in the header are [Font Awesome Free](https://fontawesome.com)
+brand icons, used under [CC BY 4.0](https://fontawesome.com/license/free).
+
 ## How it works
 
 PEAR runs entirely in your browser. There is no backend server beyond a
