@@ -48,6 +48,12 @@ export interface PlexSection {
   uuid: string;
   type: 'movie' | 'show' | 'artist' | 'photo';
   title: string;
+  /** e.g. "Plex Movie Scanner" vs "Plex Video Files" -- distinguishes a real Movies
+   * library from an "Other Videos"/home-video library, since Plex reports both as
+   * type="movie" with no dedicated type of its own for the latter. */
+  scanner?: string;
+  /** The "Exclude from Home" library setting: 1 = hidden from dashboard/home. */
+  hidden?: number;
 }
 
 /** One row of /library/recentlyAdded, normalized to what PEAR needs to render + relocate. */

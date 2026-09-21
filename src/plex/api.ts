@@ -87,7 +87,15 @@ export async function fetchSections(baseUrl: string, clientId: string, token: st
     headers: { Accept: 'application/json' },
   });
   const data = await asJson<{ MediaContainer: { Directory?: PlexSection[] } }>(res);
-  return (data.MediaContainer.Directory ?? []).filter((s) => s.type === 'movie' || s.type === 'show');
+  return (data.MediaContainer.Directory ?? []).filter((s) => {
+    if (s.hidden) return false; // "Exclude from Home" library setting
+    if (s.type !== 'movie' && s.type !== 'show') return false;
+    // "Other Videos"/home-video libraries report type="movie" too (Plex has no
+    // distinct type for them) but use the generic file scanner instead of the
+    // real movie scanner -- exclude those from the Movies feed.
+    if (s.type === 'movie' && /video files/i.test(s.scanner ?? '')) return false;
+    return true;
+  });
 }
 
 interface RawRecentEntry {
