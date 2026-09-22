@@ -48,7 +48,7 @@ export interface PlexSection {
   uuid: string;
   type: 'movie' | 'show' | 'artist' | 'photo';
   title: string;
-  /** e.g. "Plex Movie Scanner" vs "Plex Video Files" -- distinguishes a real Movies
+  /** e.g. "Plex Movie" vs "Plex Video Files Scanner" -- distinguishes a real Movies
    * library from an "Other Videos"/home-video library, since Plex reports both as
    * type="movie" with no dedicated type of its own for the latter. */
   scanner?: string;
