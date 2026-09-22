@@ -2,7 +2,7 @@ import { DEFAULT_MAX_LIST_ITEMS, MAX_MAX_LIST_ITEMS, MIN_MAX_LIST_ITEMS, getMaxL
 import { el } from './dom';
 import { openModal } from './modal';
 
-export function openSettingsModal(): void {
+export function openSettingsModal(onChange?: () => void): void {
   const slider = el('input', {
     class: 'input',
     attrs: {
@@ -16,9 +16,13 @@ export function openSettingsModal(): void {
 
   const valueLabel = el('span', { class: 'settings-value', text: String(slider.value) });
 
-  slider.addEventListener('input', () => {
+  slider.addEventListener('change', () => {
     valueLabel.textContent = slider.value;
     setMaxListItems(Number(slider.value));
+    onChange?.();
+  });
+  slider.addEventListener('input', () => {
+    valueLabel.textContent = slider.value;
   });
 
   const restoreBtn = el('button', { class: 'btn btn-secondary', text: 'Restore Defaults' });
@@ -26,6 +30,7 @@ export function openSettingsModal(): void {
     restoreDefaults();
     slider.value = String(DEFAULT_MAX_LIST_ITEMS);
     valueLabel.textContent = slider.value;
+    onChange?.();
   });
 
   const body = el('div', { class: 'settings-body' }, [
@@ -34,7 +39,7 @@ export function openSettingsModal(): void {
         el('div', { class: 'settings-label', text: 'Max List Items' }),
         el('div', {
           class: 'settings-hint',
-          text: 'How many recently-added items to fetch per library (Movies and TV each). Plex itself has no day-based cutoff for Recently Added, just a most-recent-N ranking — this is that N. Takes effect next time the library loads.',
+          text: 'Controls how many items are visible in the Recently Added lists per library.',
         }),
       ]),
       el('div', { class: 'settings-control' }, [slider, valueLabel]),

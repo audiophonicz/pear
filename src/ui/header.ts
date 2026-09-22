@@ -23,6 +23,7 @@ export interface HeaderApi {
 interface HeaderOpts {
   onChangeServer: () => void;
   onLogout: () => void;
+  onSettingsChanged?: () => void;
 }
 
 function renderAccountArea({ onChangeServer, onLogout }: HeaderOpts): { wrap: HTMLElement; refresh: () => void } {
@@ -98,7 +99,7 @@ export function renderHeader(opts: HeaderOpts): HeaderApi {
   const account = renderAccountArea(opts);
 
   const settingsBtn = el('button', { class: 'icon-btn', attrs: { 'aria-label': 'Settings' } }, [gearIcon()]);
-  settingsBtn.addEventListener('click', () => openSettingsModal());
+  settingsBtn.addEventListener('click', () => openSettingsModal(opts.onSettingsChanged));
 
   const helpBtn = el('button', { class: 'icon-btn', attrs: { 'aria-label': 'Help & About' } }, [helpIcon()]);
   helpBtn.addEventListener('click', () => openHelpModal());
