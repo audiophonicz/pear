@@ -3,7 +3,7 @@ import { chevronDownIcon, dockerWhaleIcon, gearIcon, githubIcon, helpIcon, logou
 import { openSettingsModal } from './settingsModal';
 import { openHelpModal } from './helpModal';
 import { fetchAccount } from '../plex/api';
-import { getAccountToken, getAccountUsername, getClientId, setAccountUsername } from '../state/session';
+import { getAccountToken, getAccountUsername, getClientId, getServer, setAccountUsername } from '../state/session';
 
 const GITHUB_URL = 'https://github.com/audiophonicz/pear';
 // TODO: point at the actual image registry page once one is set up; hub.docker.com
@@ -36,7 +36,8 @@ function renderAccountArea({ onChangeServer, onLogout }: HeaderOpts): { wrap: HT
   ]);
 
   const changeServerBtn = el('button', { class: 'dropdown-item', attrs: { type: 'button' } }, [serversIcon(), el('span', { text: 'Change Server' })]);
-  const logoutBtn = el('button', { class: 'dropdown-item', attrs: { type: 'button' } }, [logoutIcon(), el('span', { text: 'Logout' })]);
+  const logoutLabel = el('span', { text: 'Logout' });
+  const logoutBtn = el('button', { class: 'dropdown-item', attrs: { type: 'button' } }, [logoutIcon(), logoutLabel]);
   const menu = el('div', { class: 'account-menu hidden' }, [changeServerBtn, logoutBtn]);
   const wrap = el('div', { class: 'account-wrap' }, [toggle, menu]);
 
@@ -63,33 +64,47 @@ function renderAccountArea({ onChangeServer, onLogout }: HeaderOpts): { wrap: HT
     onLogout();
   });
 
-  function applyName(username: string): void {
-    avatar.textContent = username.charAt(0).toUpperCase();
-    nameEl.textContent = username;
+  function applyBadge(label: string): void {
+    avatar.textContent = label.charAt(0).toUpperCase();
+    nameEl.textContent = label;
     toggle.classList.remove('hidden');
   }
 
   function refresh(): void {
     const token = getAccountToken();
-    if (!token) {
-      toggle.classList.add('hidden');
-      closeMenu();
+    if (token) {
+      changeServerBtn.classList.remove('hidden');
+      logoutLabel.textContent = 'Logout';
+      const cached = getAccountUsername();
+      if (cached) {
+        applyBadge(cached);
+        return;
+      }
+      fetchAccount(getClientId(), token)
+        .then((account) => {
+          const username = account.username || account.title || account.email || 'Account';
+          setAccountUsername(username);
+          applyBadge(username);
+        })
+        .catch(() => {
+          // Token may be stale; leave the badge hidden rather than erroring the whole header.
+        });
       return;
     }
-    const cached = getAccountUsername();
-    if (cached) {
-      applyName(cached);
+
+    // No Plex account -- but a manually-connected server still needs a way to
+    // disconnect. There's no account to list other servers under, so no
+    // "Change Server" option here, just a straight disconnect.
+    const server = getServer();
+    if (server) {
+      changeServerBtn.classList.add('hidden');
+      logoutLabel.textContent = 'Disconnect';
+      applyBadge(server.name || 'Manual connection');
       return;
     }
-    fetchAccount(getClientId(), token)
-      .then((account) => {
-        const username = account.username || account.title || account.email || 'Account';
-        setAccountUsername(username);
-        applyName(username);
-      })
-      .catch(() => {
-        // Token may be stale; leave the badge hidden rather than erroring the whole header.
-      });
+
+    toggle.classList.add('hidden');
+    closeMenu();
   }
 
   return { wrap, refresh };
