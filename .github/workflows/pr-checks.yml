@@ -16,7 +16,7 @@ jobs:
           node-version: '22'
           cache: 'npm'
       - run: npm ci
-      - run: npx eslint . --output-format=github
+      - run: npm run lint
 
   type-check:
     name: Type Check
