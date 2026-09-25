@@ -112,6 +112,7 @@ jobs:
           command: cves
           image: local://scan-target:latest
           only-severities: critical,high
+          only-fixed: true
           exit-code: true
         env:
           DOCKER_SCOUT_HUB_USER: ${{ secrets.DOCKER_HUB_USERNAME }}
