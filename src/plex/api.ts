@@ -133,7 +133,14 @@ export async function fetchSectionRecentlyAdded(
   const url = `${baseUrl.replace(/\/$/, '')}/library/sections/${sectionId}/recentlyAdded?${params}&${serverAuth(clientId, token)}`;
   const res = await fetch(url, { headers: { Accept: 'application/json' } });
   const data = await asJson<{ MediaContainer: { Metadata?: RawRecentEntry[] } }>(res);
-  return data.MediaContainer.Metadata ?? [];
+  const items = data.MediaContainer.Metadata ?? [];
+  // Use the section we explicitly requested rather than trusting each item's own
+  // librarySectionID from the response -- it's unambiguously correct here (we just
+  // fetched this batch BY section id), whereas the field's reliability per item type
+  // (season/episode entries in particular) isn't guaranteed, and relocateAddedAt
+  // builds its PUT URL path directly from this value: a missing/wrong one there
+  // produces a malformed request path and a generic 404 from the server.
+  return items.map((item) => ({ ...item, librarySectionID: sectionId }));
 }
 
 const METADATA_TYPE_ID: Record<RecentItem['type'], number> = {
