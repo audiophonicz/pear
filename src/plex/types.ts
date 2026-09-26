@@ -67,6 +67,9 @@ export interface RecentItem {
   grandparentTitle?: string;
   year?: number;
   addedAt: number;
+  /** Original release/air date, "YYYY-MM-DD", from Plex's own agent match. Absent for
+   * unmatched (personal media) items, and not reliably present on season-type items. */
+  originallyAvailableAt?: string;
   /** This item's own thumbnail (an episode's screencap, not its show's poster). */
   thumb?: string;
   /** Season's poster — the show's poster, for a season-type item. */

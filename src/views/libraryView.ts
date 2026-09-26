@@ -56,7 +56,8 @@ export function renderLibraryView(): HTMLElement {
 
   const daysInput = el('input', { class: 'input input-narrow', attrs: { type: 'number', min: '0', value: '90' } }) as HTMLInputElement;
   const dateInput = el('input', { class: 'input input-narrow', attrs: { type: 'date' } }) as HTMLInputElement;
-  const modeDays = el('input', { attrs: { type: 'radio', name: 'relocate-mode', value: 'days', checked: 'checked' } }) as HTMLInputElement;
+  const modeOriginal = el('input', { attrs: { type: 'radio', name: 'relocate-mode', value: 'original', checked: 'checked' } }) as HTMLInputElement;
+  const modeDays = el('input', { attrs: { type: 'radio', name: 'relocate-mode', value: 'days' } }) as HTMLInputElement;
   const modeDate = el('input', { attrs: { type: 'radio', name: 'relocate-mode', value: 'date' } }) as HTMLInputElement;
   const applyButton = el('button', { class: 'btn btn-primary', text: 'Relocate selected' }) as HTMLButtonElement;
 
@@ -253,16 +254,16 @@ export function renderLibraryView(): HTMLElement {
       .filter((item): item is RecentItem => item !== undefined);
     if (targets.length === 0) return;
 
-    const useDaysMode = modeDays.checked;
+    const mode: 'original' | 'days' | 'date' = modeOriginal.checked ? 'original' : modeDays.checked ? 'days' : 'date';
     let days = 0;
     let absoluteTarget = 0;
-    if (useDaysMode) {
+    if (mode === 'days') {
       days = Number(daysInput.value);
       if (!Number.isFinite(days) || days < 0) {
         statusArea.replaceChildren(statusBanner('error', 'Enter a valid number of days.'));
         return;
       }
-    } else {
+    } else if (mode === 'date') {
       if (!dateInput.value) {
         statusArea.replaceChildren(statusBanner('error', 'Pick a date.'));
         return;
@@ -279,8 +280,18 @@ export function renderLibraryView(): HTMLElement {
       // Days mode is relative to the item's OWN current addedAt, not to "now" — that
       // way an item that's already old still moves further into the past instead of
       // potentially jumping more recent than it already was.
-      const newAddedAt = useDaysMode ? item.addedAt - days * 86400 : absoluteTarget;
       try {
+        let newAddedAt: number;
+        if (mode === 'original') {
+          if (!item.originallyAvailableAt) {
+            throw new Error('No original release date available for this item.');
+          }
+          newAddedAt = Math.floor(new Date(`${item.originallyAvailableAt}T12:00:00`).getTime() / 1000);
+        } else if (mode === 'days') {
+          newAddedAt = item.addedAt - days * 86400;
+        } else {
+          newAddedAt = absoluteTarget;
+        }
         await relocateAddedAt(server.url, item.librarySectionID, item, newAddedAt, clientId, token!);
         selected.delete(item.ratingKey);
         removeRelocatedItem(item.ratingKey);
@@ -307,6 +318,8 @@ export function renderLibraryView(): HTMLElement {
     el('div', { class: 'relocate-panel' }, [
       el('p', { class: 'relocate-instructions', text: 'To remove an item from the Recently Added lists:' }),
       el('div', { class: 'relocate-mode-row' }, [
+        el('label', {}, [modeOriginal, el('span', { text: 'Set added date to original release date' })]),
+        el('span', { class: 'relocate-or', text: 'OR' }),
         el('label', {}, [modeDays, el('span', { text: 'Push added date back' }), daysInput, el('span', { text: 'days' })]),
         el('span', { class: 'relocate-or', text: 'OR' }),
         el('label', {}, [modeDate, el('span', { text: 'Set added date to' }), dateInput]),
