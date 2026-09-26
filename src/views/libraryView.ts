@@ -272,7 +272,7 @@ export function renderLibraryView(): HTMLElement {
 
     applyButton.disabled = true;
     let done = 0;
-    let failed = 0;
+    const failures: string[] = [];
     statusArea.replaceChildren(statusBanner('info', `Relocating 0/${targets.length}…`));
 
     await runWithConcurrency(targets, CONCURRENCY, async (item) => {
@@ -284,8 +284,8 @@ export function renderLibraryView(): HTMLElement {
         await relocateAddedAt(server.url, item.librarySectionID, item, newAddedAt, clientId, token!);
         selected.delete(item.ratingKey);
         removeRelocatedItem(item.ratingKey);
-      } catch {
-        failed += 1;
+      } catch (err) {
+        failures.push(`"${item.title}": ${(err as Error).message}`);
       } finally {
         done += 1;
         statusArea.replaceChildren(statusBanner('info', `Relocating ${done}/${targets.length}…`));
@@ -295,8 +295,8 @@ export function renderLibraryView(): HTMLElement {
     updateSelectedCount();
     renderBody();
     statusArea.replaceChildren(
-      failed > 0
-        ? statusBanner('error', `Done with ${failed} failure(s). ${targets.length - failed} item(s) relocated.`)
+      failures.length > 0
+        ? statusBanner('error', `Done with ${failures.length} failure(s). ${targets.length - failures.length} item(s) relocated. ${failures.join(' | ')}`)
         : statusBanner('info', `${targets.length} item(s) relocated.`),
     );
   });
