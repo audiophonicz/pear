@@ -101,12 +101,16 @@ export function renderLibraryView(): HTMLElement {
     function cardFor(item: RecentItem): HTMLElement {
       let primaryTitle: string;
       let secondary: string;
+      let subtitleTooltip: string | undefined;
       if (item.type === 'episode') {
-        // Show name up top, then which season and the episode's own title -- without
-        // the episode title here, individual episodes were indistinguishable from a
-        // season-level entry (both just showed "Season N").
         primaryTitle = item.grandparentTitle ?? item.title;
-        secondary = item.parentTitle ? `${item.parentTitle} — ${item.title}` : item.title;
+        if (item.parentIndex !== undefined && item.index !== undefined) {
+          const pad = (n: number) => String(n).padStart(2, '0');
+          secondary = `S${pad(item.parentIndex)} E${pad(item.index)}`;
+          subtitleTooltip = item.title;
+        } else {
+          secondary = item.title;
+        }
       } else if (item.type === 'season') {
         primaryTitle = item.parentTitle ?? item.title;
         secondary = item.title;
@@ -120,10 +124,13 @@ export function renderLibraryView(): HTMLElement {
         ? (el('img', { class: 'dash-poster', attrs: { src: thumbSrc, loading: 'lazy', alt: '' } }) as HTMLImageElement)
         : el('div', { class: 'dash-poster dash-poster-empty' });
 
+      const subtitleEl = el('div', { class: 'dash-subtitle', text: secondary });
+      if (subtitleTooltip) subtitleEl.title = subtitleTooltip;
+
       const card = el('button', { class: 'dash-card', attrs: { type: 'button' } }, [
         el('div', { class: 'dash-poster-wrap' }, [poster, el('div', { class: 'dash-check' }, [checkIcon()])]),
         el('div', { class: 'dash-title', text: primaryTitle }),
-        el('div', { class: 'dash-subtitle', text: secondary }),
+        subtitleEl,
       ]);
       if (selected.has(item.ratingKey)) card.classList.add('selected');
       card.addEventListener('click', () => {

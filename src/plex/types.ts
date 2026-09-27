@@ -67,6 +67,10 @@ export interface RecentItem {
   grandparentTitle?: string;
   year?: number;
   addedAt: number;
+  /** Episode number within its season, for an episode-type item. */
+  index?: number;
+  /** Season number, for an episode-type item (its own season/parent's index). */
+  parentIndex?: number;
   /** Original release/air date, "YYYY-MM-DD", from Plex's own agent match. Absent for
    * unmatched (personal media) items, and not reliably present on season-type items. */
   originallyAvailableAt?: string;

@@ -107,6 +107,8 @@ interface RawRecentEntry {
   grandparentTitle?: string;
   year?: number;
   addedAt: number;
+  index?: number;
+  parentIndex?: number;
   originallyAvailableAt?: string;
   thumb?: string;
   parentThumb?: string;
