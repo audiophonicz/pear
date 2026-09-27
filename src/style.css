@@ -425,7 +425,11 @@ body {
   display: flex;
   gap: 0.85rem;
   overflow-x: auto;
-  padding-bottom: 0.5rem;
+  /* overflow-x set to a non-visible value forces overflow-y to behave as "auto"
+     too (per the CSS overflow spec, you can't mix visible with a clipping axis),
+     so the selected-card ring's box-shadow -- which pokes a few px above/below
+     the card -- gets clipped without this padding to give it room. */
+  padding: 4px 0.5rem 0.5rem;
   scrollbar-width: none;
 }
 
@@ -554,12 +558,6 @@ body {
   font-size: 0.9rem;
 }
 
-.relocate-or {
-  font-size: 0.8rem;
-  font-weight: 600;
-  color: var(--text-muted);
-  letter-spacing: 0.05em;
-}
 
 .relocate-action-row {
   display: flex;

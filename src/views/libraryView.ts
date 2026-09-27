@@ -99,9 +99,21 @@ export function renderLibraryView(): HTMLElement {
     const showTrack = el('div', { class: 'dash-track' });
 
     function cardFor(item: RecentItem): HTMLElement {
-      const isEpisodeish = item.type !== 'movie';
-      const primaryTitle = isEpisodeish ? (item.grandparentTitle ?? item.title) : item.title;
-      const secondary = isEpisodeish ? (item.parentTitle ?? item.title) : item.year ? String(item.year) : '';
+      let primaryTitle: string;
+      let secondary: string;
+      if (item.type === 'episode') {
+        // Show name up top, then which season and the episode's own title -- without
+        // the episode title here, individual episodes were indistinguishable from a
+        // season-level entry (both just showed "Season N").
+        primaryTitle = item.grandparentTitle ?? item.title;
+        secondary = item.parentTitle ? `${item.parentTitle} — ${item.title}` : item.title;
+      } else if (item.type === 'season') {
+        primaryTitle = item.parentTitle ?? item.title;
+        secondary = item.title;
+      } else {
+        primaryTitle = item.title;
+        secondary = item.year ? String(item.year) : '';
+      }
 
       const thumbSrc = thumbUrl(posterPath(item));
       const poster = thumbSrc
@@ -319,9 +331,7 @@ export function renderLibraryView(): HTMLElement {
       el('p', { class: 'relocate-instructions', text: 'To remove an item from the Recently Added lists:' }),
       el('div', { class: 'relocate-mode-row' }, [
         el('label', {}, [modeOriginal, el('span', { text: 'Set added date to original release date' })]),
-        el('span', { class: 'relocate-or', text: 'OR' }),
         el('label', {}, [modeDays, el('span', { text: 'Push added date back' }), daysInput, el('span', { text: 'days' })]),
-        el('span', { class: 'relocate-or', text: 'OR' }),
         el('label', {}, [modeDate, el('span', { text: 'Set added date to' }), dateInput]),
       ]),
       el('div', { class: 'relocate-action-row' }, [selectedCountEl, applyButton]),
