@@ -67,10 +67,16 @@ export interface RecentItem {
   grandparentTitle?: string;
   year?: number;
   addedAt: number;
-  /** Episode number within its season, for an episode-type item. */
+  /** Episode number within its season (episode-type), or the season's own number
+   * (season-type) -- Plex reuses this same "index" field for both meanings. */
   index?: number;
-  /** Season number, for an episode-type item (its own season/parent's index). */
+  /** Season number, for an episode-type item only (its parent season's index). */
   parentIndex?: number;
+  /** The show's ratingKey -- stable grouping id for an episode-type item (its
+   * grandparent is the show). */
+  grandparentRatingKey?: string;
+  /** The show's ratingKey, for a season-type item (its parent IS the show). */
+  parentRatingKey?: string;
   /** Original release/air date, "YYYY-MM-DD", from Plex's own agent match. Absent for
    * unmatched (personal media) items, and not reliably present on season-type items. */
   originallyAvailableAt?: string;

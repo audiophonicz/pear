@@ -109,6 +109,8 @@ interface RawRecentEntry {
   addedAt: number;
   index?: number;
   parentIndex?: number;
+  grandparentRatingKey?: string;
+  parentRatingKey?: string;
   originallyAvailableAt?: string;
   thumb?: string;
   parentThumb?: string;

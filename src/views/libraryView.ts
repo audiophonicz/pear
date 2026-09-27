@@ -20,6 +20,51 @@ function displayType(item: RecentItem): TypeFilter {
   return item.type === 'movie' ? 'movie' : 'show';
 }
 
+/** Stable id for "which show does this belong to", so multiple recently-added
+ * episodes/seasons for the same show can be grouped -- title text alone risks
+ * collisions between different shows that happen to share a name. */
+function showGroupKey(item: RecentItem): string | null {
+  if (item.type === 'episode') return item.grandparentRatingKey ?? null;
+  if (item.type === 'season') return item.parentRatingKey ?? null;
+  return null;
+}
+
+/** Season number: Plex reuses "index" for a season's own number, and "parentIndex"
+ * for an episode's containing season number -- two different fields, same concept. */
+function seasonNumberOf(item: RecentItem): number | undefined {
+  if (item.type === 'episode') return item.parentIndex;
+  if (item.type === 'season') return item.index;
+  return undefined;
+}
+
+function showDisplayName(item: RecentItem): string {
+  if (item.type === 'episode') return item.grandparentTitle ?? item.title;
+  if (item.type === 'season') return item.parentTitle ?? item.title;
+  return item.title;
+}
+
+interface ShowGroup {
+  key: string;
+  items: RecentItem[];
+}
+
+/** Groups recently-added TV entries by show. A show with only one recently-added
+ * episode stays as that individual episode; anything else (2+ entries for the same
+ * show, in any season distribution, or a lone season-type entry) becomes one
+ * show-level group labeled by how many distinct seasons are represented. */
+function groupShowItems(items: RecentItem[]): ShowGroup[] {
+  const groups = new Map<string, RecentItem[]>();
+  for (const item of items) {
+    const key = showGroupKey(item) ?? `item:${item.ratingKey}`;
+    const existing = groups.get(key);
+    if (existing) existing.push(item);
+    else groups.set(key, [item]);
+  }
+  return Array.from(groups.entries())
+    .map(([key, groupItems]) => ({ key, items: groupItems }))
+    .sort((a, b) => Math.max(...b.items.map((i) => i.addedAt)) - Math.max(...a.items.map((i) => i.addedAt)));
+}
+
 async function runWithConcurrency<T>(items: T[], limit: number, worker: (item: T) => Promise<void>): Promise<void> {
   let cursor = 0;
   async function next(): Promise<void> {
@@ -48,6 +93,11 @@ export function renderLibraryView(): HTMLElement {
   let showItems: RecentItem[] = [];
   let allItemsFlat: RecentItem[] = [];
   const selected = new Set<string>();
+  // Every renderable card (movie, singleton episode, or a grouped show) registers
+  // itself here, singleton cards as a 1-item array -- lets the relocate handler
+  // resolve any selection id back to its underlying item(s) uniformly, regardless
+  // of which layout (dashboard or list) or card type produced that selection.
+  const groupMembership = new Map<string, RecentItem[]>();
   let searchTerm = '';
 
   const bodyContainer = el('div', { class: 'library-body' });
@@ -82,10 +132,6 @@ export function renderLibraryView(): HTMLElement {
     movieItems = movieItems.filter((i) => i.ratingKey !== ratingKey);
     showItems = showItems.filter((i) => i.ratingKey !== ratingKey);
     allItemsFlat = allItemsFlat.filter((i) => i.ratingKey !== ratingKey);
-  }
-
-  function findItem(ratingKey: string): RecentItem | undefined {
-    return movieItems.find((i) => i.ratingKey === ratingKey) ?? showItems.find((i) => i.ratingKey === ratingKey);
   }
 
   // ---------------------------------------------------------------------------
@@ -132,10 +178,41 @@ export function renderLibraryView(): HTMLElement {
         el('div', { class: 'dash-title', text: primaryTitle }),
         subtitleEl,
       ]);
+      groupMembership.set(item.ratingKey, [item]);
       if (selected.has(item.ratingKey)) card.classList.add('selected');
       card.addEventListener('click', () => {
         if (selected.has(item.ratingKey)) selected.delete(item.ratingKey);
         else selected.add(item.ratingKey);
+        card.classList.toggle('selected');
+        updateSelectedCount();
+      });
+      return card;
+    }
+
+    /** A show with 2+ recently-added entries (in any season distribution), or a lone
+     * season-type entry -- one card for the whole show, labeled by how many distinct
+     * seasons are represented. Relocating it applies to every underlying item. */
+    function groupCardFor(group: ShowGroup): HTMLElement {
+      const first = group.items[0];
+      const showName = showDisplayName(first);
+      const seasonCount = new Set(group.items.map(seasonNumberOf).filter((n): n is number => n !== undefined)).size;
+      const secondary = seasonCount > 0 ? `${seasonCount} Season${seasonCount === 1 ? '' : 's'}` : '';
+
+      const thumbSrc = thumbUrl(posterPath(first));
+      const poster = thumbSrc
+        ? (el('img', { class: 'dash-poster', attrs: { src: thumbSrc, loading: 'lazy', alt: '' } }) as HTMLImageElement)
+        : el('div', { class: 'dash-poster dash-poster-empty' });
+
+      const card = el('button', { class: 'dash-card', attrs: { type: 'button' } }, [
+        el('div', { class: 'dash-poster-wrap' }, [poster, el('div', { class: 'dash-check' }, [checkIcon()])]),
+        el('div', { class: 'dash-title', text: showName }),
+        el('div', { class: 'dash-subtitle', text: secondary }),
+      ]);
+      groupMembership.set(group.key, group.items);
+      if (selected.has(group.key)) card.classList.add('selected');
+      card.addEventListener('click', () => {
+        if (selected.has(group.key)) selected.delete(group.key);
+        else selected.add(group.key);
         card.classList.toggle('selected');
         updateSelectedCount();
       });
@@ -154,10 +231,20 @@ export function renderLibraryView(): HTMLElement {
     }
 
     function refreshRows(): void {
+      groupMembership.clear();
       const term = searchTerm.trim().toLowerCase();
       const matches = (item: RecentItem) => !term || item.title.toLowerCase().includes(term) || (item.grandparentTitle ?? '').toLowerCase().includes(term);
+
       movieTrack.replaceChildren(...movieItems.filter(matches).map(cardFor));
-      showTrack.replaceChildren(...showItems.filter(matches).map(cardFor));
+
+      // Group first, filter second: filtering the raw items before grouping could
+      // show a show's group card with the wrong season count if the search term
+      // only matched some of its episodes. A group is shown whole if ANY of its
+      // episodes match, never a partial subset.
+      const groups = groupShowItems(showItems).filter((g) => g.items.some(matches));
+      showTrack.replaceChildren(
+        ...groups.map((g) => (g.items.length === 1 && g.items[0].type === 'episode' ? cardFor(g.items[0]) : groupCardFor(g))),
+      );
     }
 
     searchInput.addEventListener('input', () => {
@@ -197,6 +284,7 @@ export function renderLibraryView(): HTMLElement {
     ({ all: filterAll, movie: filterMovies, show: filterShows }[typeFilter]).classList.add('chip-active');
 
     function renderRows(): void {
+      groupMembership.clear();
       const term = searchTerm.trim().toLowerCase();
       const visible = allItemsFlat.filter((item) => {
         if (typeFilter !== 'all' && displayType(item) !== typeFilter) return false;
@@ -210,6 +298,7 @@ export function renderLibraryView(): HTMLElement {
       }
 
       const rows = visible.map((item) => {
+        groupMembership.set(item.ratingKey, [item]);
         const checkbox = el('input', { attrs: { type: 'checkbox' } }) as HTMLInputElement;
         checkbox.checked = selected.has(item.ratingKey);
         checkbox.addEventListener('change', () => {
@@ -268,9 +357,7 @@ export function renderLibraryView(): HTMLElement {
 
   applyButton.disabled = true;
   applyButton.addEventListener('click', async () => {
-    const targets = Array.from(selected)
-      .map((key) => findItem(key))
-      .filter((item): item is RecentItem => item !== undefined);
+    const targets = Array.from(selected).flatMap((id) => groupMembership.get(id) ?? []);
     if (targets.length === 0) return;
 
     const mode: 'original' | 'days' | 'date' = modeOriginal.checked ? 'original' : modeDays.checked ? 'days' : 'date';
@@ -312,7 +399,6 @@ export function renderLibraryView(): HTMLElement {
           newAddedAt = absoluteTarget;
         }
         await relocateAddedAt(server.url, item.librarySectionID, item, newAddedAt, clientId, token!);
-        selected.delete(item.ratingKey);
         removeRelocatedItem(item.ratingKey);
       } catch (err) {
         failures.push(`"${item.title}": ${(err as Error).message}`);
@@ -322,6 +408,10 @@ export function renderLibraryView(): HTMLElement {
       }
     });
 
+    // A selection id may have been a group covering several underlying items with
+    // mixed success/failure -- rather than track partial-group survival through a
+    // regroup on the next render, just clear selection entirely after a batch.
+    selected.clear();
     updateSelectedCount();
     renderBody();
     statusArea.replaceChildren(
