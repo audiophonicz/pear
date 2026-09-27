@@ -534,7 +534,7 @@ body {
   flex-direction: column;
   gap: 0.6rem;
   width: 100%;
-  max-width: 960px;
+  max-width: 480px;
   margin: 0 auto;
 }
 
