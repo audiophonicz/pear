@@ -4,13 +4,12 @@ const KEYS = {
   maxListItems: 'pear.settings.maxListItems',
 } as const;
 
-// Plex's Recently Added has no day-based cutoff of its own -- it's just "N most
-// recent items by addedAt", where N is whatever the requesting client asks for.
-// This setting IS that N (fetched per library section), not a display/viewport
-// limit -- pick it generous enough that nothing recent gets missed.
-export const DEFAULT_MAX_LIST_ITEMS = 100;
-export const MIN_MAX_LIST_ITEMS = 20;
-export const MAX_MAX_LIST_ITEMS = 300;
+// How many items are actually displayed in the Recently Added lists per library --
+// applied after fetching/grouping, not the raw Plex fetch depth (that's a separate,
+// fixed constant in libraryView.ts, independent of this setting).
+export const DEFAULT_MAX_LIST_ITEMS = 30;
+export const MIN_MAX_LIST_ITEMS = 10;
+export const MAX_MAX_LIST_ITEMS = 100;
 
 export function getMaxListItems(): number {
   const raw = localStorage.getItem(KEYS.maxListItems);
