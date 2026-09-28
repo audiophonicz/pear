@@ -1,7 +1,7 @@
 import { fetchSectionRecentlyAdded, fetchSections, relocateAddedAt } from '../plex/api';
 import type { RecentItem } from '../plex/types';
 import { getAccountToken, getClientId, getServer } from '../state/session';
-import { getMaxListItems } from '../state/settings';
+import { getMaxListItems, MAX_MAX_LIST_ITEMS } from '../state/settings';
 import { el, statusBanner } from '../ui/dom';
 import { checkIcon, chevronLeftIcon, chevronRightIcon } from '../ui/icons';
 
@@ -263,14 +263,16 @@ export function renderLibraryView(): HTMLElement {
       groupMembership.clear();
       const term = searchTerm.trim().toLowerCase();
       const matches = (item: RecentItem) => !term || item.title.toLowerCase().includes(term) || (item.grandparentTitle ?? '').toLowerCase().includes(term);
+      const displayLimit = getMaxListItems();
 
-      movieTrack.replaceChildren(...movieItems.filter(matches).map(cardFor));
+      movieTrack.replaceChildren(...movieItems.filter(matches).slice(0, displayLimit).map(cardFor));
 
       // Group first, filter second: filtering the raw items before grouping could
       // show a show's group card with the wrong season count if the search term
       // only matched some of its episodes. A group is shown whole if ANY of its
-      // episodes match, never a partial subset.
-      const groups = groupShowItems(showItems).filter((g) => g.items.some(matches));
+      // episodes match, never a partial subset. The display cap applies to groups
+      // (what's actually visible), not the raw episode count that fed them.
+      const groups = groupShowItems(showItems).filter((g) => g.items.some(matches)).slice(0, displayLimit);
       showTrack.replaceChildren(
         ...groups.map((g) => (g.items.length === 1 && g.items[0].type === 'episode' ? cardFor(g.items[0]) : groupCardFor(g))),
       );
@@ -315,11 +317,13 @@ export function renderLibraryView(): HTMLElement {
     function renderRows(): void {
       groupMembership.clear();
       const term = searchTerm.trim().toLowerCase();
-      const visible = allItemsFlat.filter((item) => {
-        if (typeFilter !== 'all' && displayType(item) !== typeFilter) return false;
-        if (term && !item.title.toLowerCase().includes(term) && !(item.grandparentTitle ?? '').toLowerCase().includes(term)) return false;
-        return true;
-      });
+      const visible = allItemsFlat
+        .filter((item) => {
+          if (typeFilter !== 'all' && displayType(item) !== typeFilter) return false;
+          if (term && !item.title.toLowerCase().includes(term) && !(item.grandparentTitle ?? '').toLowerCase().includes(term)) return false;
+          return true;
+        })
+        .slice(0, getMaxListItems());
 
       if (visible.length === 0) {
         listEl.replaceChildren(el('p', { class: 'muted', text: 'No items match.' }));
@@ -472,10 +476,15 @@ export function renderLibraryView(): HTMLElement {
       const movieSections = sections.filter((s) => s.type === 'movie');
       const showSections = sections.filter((s) => s.type === 'show');
 
-      const fetchLimit = getMaxListItems();
+      // Always fetch the largest practical raw batch, independent of the display
+      // setting -- "Max List Items" controls how many items are VISIBLE (its own
+      // label says so), not how many get fetched. TV grouping in particular can
+      // collapse many raw episodes into one displayed card, so fetching only as
+      // many raw items as the display count would starve the display step of
+      // enough material to actually fill that many slots after grouping.
       const [movieResults, showResults] = await Promise.all([
-        Promise.all(movieSections.map((s) => fetchSectionRecentlyAdded(server.url, s.key, clientId, token, fetchLimit))),
-        Promise.all(showSections.map((s) => fetchSectionRecentlyAdded(server.url, s.key, clientId, token, fetchLimit))),
+        Promise.all(movieSections.map((s) => fetchSectionRecentlyAdded(server.url, s.key, clientId, token, MAX_MAX_LIST_ITEMS))),
+        Promise.all(showSections.map((s) => fetchSectionRecentlyAdded(server.url, s.key, clientId, token, MAX_MAX_LIST_ITEMS))),
       ]);
 
       movieItems = movieResults.flat().sort((a, b) => b.addedAt - a.addedAt);
