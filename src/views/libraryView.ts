@@ -9,6 +9,12 @@ type TypeFilter = 'all' | 'movie' | 'show';
 
 const CONCURRENCY = 4;
 
+// Fixed, independent of the Max List Items display setting -- always fetch exactly
+// this many raw items per library from Plex's recentlyAdded feed. Grouping/display
+// truncation happen entirely downstream of this; this number never changes based on
+// what the user has the display slider set to.
+const RECENTLY_ADDED_FETCH_LIMIT = 100;
+
 // A bulk touch/re-encode event adds many episodes (often spanning several seasons)
 // within seconds of each other; a genuine weekly release adds one episode roughly
 // every 7 days. This threshold sits enormously far from both real patterns, verified
@@ -263,14 +269,16 @@ export function renderLibraryView(): HTMLElement {
       groupMembership.clear();
       const term = searchTerm.trim().toLowerCase();
       const matches = (item: RecentItem) => !term || item.title.toLowerCase().includes(term) || (item.grandparentTitle ?? '').toLowerCase().includes(term);
+      const displayLimit = getMaxListItems();
 
-      movieTrack.replaceChildren(...movieItems.filter(matches).map(cardFor));
+      movieTrack.replaceChildren(...movieItems.filter(matches).slice(0, displayLimit).map(cardFor));
 
       // Group first, filter second: filtering the raw items before grouping could
       // show a show's group card with the wrong season count if the search term
       // only matched some of its episodes. A group is shown whole if ANY of its
-      // episodes match, never a partial subset.
-      const groups = groupShowItems(showItems).filter((g) => g.items.some(matches));
+      // episodes match, never a partial subset. The display cap applies to groups
+      // (what's actually visible), not the raw episode count that fed them.
+      const groups = groupShowItems(showItems).filter((g) => g.items.some(matches)).slice(0, displayLimit);
       showTrack.replaceChildren(
         ...groups.map((g) => (g.items.length === 1 && g.items[0].type === 'episode' ? cardFor(g.items[0]) : groupCardFor(g))),
       );
@@ -315,11 +323,13 @@ export function renderLibraryView(): HTMLElement {
     function renderRows(): void {
       groupMembership.clear();
       const term = searchTerm.trim().toLowerCase();
-      const visible = allItemsFlat.filter((item) => {
-        if (typeFilter !== 'all' && displayType(item) !== typeFilter) return false;
-        if (term && !item.title.toLowerCase().includes(term) && !(item.grandparentTitle ?? '').toLowerCase().includes(term)) return false;
-        return true;
-      });
+      const visible = allItemsFlat
+        .filter((item) => {
+          if (typeFilter !== 'all' && displayType(item) !== typeFilter) return false;
+          if (term && !item.title.toLowerCase().includes(term) && !(item.grandparentTitle ?? '').toLowerCase().includes(term)) return false;
+          return true;
+        })
+        .slice(0, getMaxListItems());
 
       if (visible.length === 0) {
         listEl.replaceChildren(el('p', { class: 'muted', text: 'No items match.' }));
@@ -472,10 +482,16 @@ export function renderLibraryView(): HTMLElement {
       const movieSections = sections.filter((s) => s.type === 'movie');
       const showSections = sections.filter((s) => s.type === 'show');
 
-      const fetchLimit = getMaxListItems();
+      // Fetch a fixed 100 raw items, always -- entirely independent of the display
+      // setting. "Max List Items" controls how many items are VISIBLE (its own
+      // label says so), not how many get fetched. TV grouping in particular can
+      // collapse many raw episodes into one displayed card, so tying fetch depth
+      // to the display count would starve the display step of enough raw material
+      // to actually fill that many slots after grouping (fewer raw items fetched
+      // = fewer episodes available to reconstruct a show's true season count).
       const [movieResults, showResults] = await Promise.all([
-        Promise.all(movieSections.map((s) => fetchSectionRecentlyAdded(server.url, s.key, clientId, token, fetchLimit))),
-        Promise.all(showSections.map((s) => fetchSectionRecentlyAdded(server.url, s.key, clientId, token, fetchLimit))),
+        Promise.all(movieSections.map((s) => fetchSectionRecentlyAdded(server.url, s.key, clientId, token, RECENTLY_ADDED_FETCH_LIMIT))),
+        Promise.all(showSections.map((s) => fetchSectionRecentlyAdded(server.url, s.key, clientId, token, RECENTLY_ADDED_FETCH_LIMIT))),
       ]);
 
       movieItems = movieResults.flat().sort((a, b) => b.addedAt - a.addedAt);
