@@ -1,13 +1,19 @@
 import { fetchSectionRecentlyAdded, fetchSections, relocateAddedAt } from '../plex/api';
 import type { RecentItem } from '../plex/types';
 import { getAccountToken, getClientId, getServer } from '../state/session';
-import { getMaxListItems, MAX_MAX_LIST_ITEMS } from '../state/settings';
+import { getMaxListItems } from '../state/settings';
 import { el, statusBanner } from '../ui/dom';
 import { checkIcon, chevronLeftIcon, chevronRightIcon } from '../ui/icons';
 
 type TypeFilter = 'all' | 'movie' | 'show';
 
 const CONCURRENCY = 4;
+
+// Fixed, independent of the Max List Items display setting -- always fetch exactly
+// this many raw items per library from Plex's recentlyAdded feed. Grouping/display
+// truncation happen entirely downstream of this; this number never changes based on
+// what the user has the display slider set to.
+const RECENTLY_ADDED_FETCH_LIMIT = 100;
 
 // A bulk touch/re-encode event adds many episodes (often spanning several seasons)
 // within seconds of each other; a genuine weekly release adds one episode roughly
@@ -476,15 +482,16 @@ export function renderLibraryView(): HTMLElement {
       const movieSections = sections.filter((s) => s.type === 'movie');
       const showSections = sections.filter((s) => s.type === 'show');
 
-      // Always fetch the largest practical raw batch, independent of the display
-      // setting -- "Max List Items" controls how many items are VISIBLE (its own
+      // Fetch a fixed 100 raw items, always -- entirely independent of the display
+      // setting. "Max List Items" controls how many items are VISIBLE (its own
       // label says so), not how many get fetched. TV grouping in particular can
-      // collapse many raw episodes into one displayed card, so fetching only as
-      // many raw items as the display count would starve the display step of
-      // enough material to actually fill that many slots after grouping.
+      // collapse many raw episodes into one displayed card, so tying fetch depth
+      // to the display count would starve the display step of enough raw material
+      // to actually fill that many slots after grouping (fewer raw items fetched
+      // = fewer episodes available to reconstruct a show's true season count).
       const [movieResults, showResults] = await Promise.all([
-        Promise.all(movieSections.map((s) => fetchSectionRecentlyAdded(server.url, s.key, clientId, token, MAX_MAX_LIST_ITEMS))),
-        Promise.all(showSections.map((s) => fetchSectionRecentlyAdded(server.url, s.key, clientId, token, MAX_MAX_LIST_ITEMS))),
+        Promise.all(movieSections.map((s) => fetchSectionRecentlyAdded(server.url, s.key, clientId, token, RECENTLY_ADDED_FETCH_LIMIT))),
+        Promise.all(showSections.map((s) => fetchSectionRecentlyAdded(server.url, s.key, clientId, token, RECENTLY_ADDED_FETCH_LIMIT))),
       ]);
 
       movieItems = movieResults.flat().sort((a, b) => b.addedAt - a.addedAt);
