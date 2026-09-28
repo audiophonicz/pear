@@ -9,6 +9,14 @@ type TypeFilter = 'all' | 'movie' | 'show';
 
 const CONCURRENCY = 4;
 
+// A bulk touch/re-encode event adds many episodes (often spanning several seasons)
+// within seconds of each other; a genuine weekly release adds one episode roughly
+// every 7 days. This threshold sits enormously far from both real patterns, verified
+// directly against a live library (bulk clusters: same-second; weekly: ~7.0 days
+// apart, consistently, across every real weekly show checked), so its exact value
+// isn't sensitive -- it just needs to separate "seconds" from "days".
+const CLUSTER_GAP_SECONDS = 24 * 60 * 60;
+
 // Two rows (Movies/TV), Plex-dashboard style, is the current layout. The original
 // single vertical scrolling list with All/Movies/TV chips is kept below rather than
 // deleted — flip this back to 'list' to bring it back if the dashboard layout doesn't
@@ -48,21 +56,42 @@ interface ShowGroup {
   items: RecentItem[];
 }
 
-/** Groups recently-added TV entries by show. A show with only one recently-added
- * episode stays as that individual episode; anything else (2+ entries for the same
- * show, in any season distribution, or a lone season-type entry) becomes one
- * show-level group labeled by how many distinct seasons are represented. */
+/** Groups recently-added TV entries by show, then splits each show's items into
+ * time-clusters: consecutive items (sorted by addedAt) join the same cluster only
+ * if each is within CLUSTER_GAP_SECONDS of the previous one, chained transitively --
+ * so a bulk event spanning multiple seasons still merges into one cluster, but a
+ * genuine weekly release (~7 days between episodes) never merges with anything,
+ * even for the same show. A cluster of exactly one episode-type item stays
+ * individual; anything else (2+ items in a cluster, in any season distribution, or
+ * a lone season-type item) becomes one card labeled by how many distinct seasons
+ * are represented within THAT cluster. A show can end up with multiple separate
+ * cards this way: one for a bulk-added cluster, plus individual cards for any of
+ * its episodes that arrived on a normal weekly schedule instead. */
 function groupShowItems(items: RecentItem[]): ShowGroup[] {
-  const groups = new Map<string, RecentItem[]>();
+  const byShow = new Map<string, RecentItem[]>();
   for (const item of items) {
     const key = showGroupKey(item) ?? `item:${item.ratingKey}`;
-    const existing = groups.get(key);
+    const existing = byShow.get(key);
     if (existing) existing.push(item);
-    else groups.set(key, [item]);
+    else byShow.set(key, [item]);
   }
-  return Array.from(groups.entries())
-    .map(([key, groupItems]) => ({ key, items: groupItems }))
-    .sort((a, b) => Math.max(...b.items.map((i) => i.addedAt)) - Math.max(...a.items.map((i) => i.addedAt)));
+
+  const clusters: ShowGroup[] = [];
+  for (const [showKey, showItemsList] of byShow) {
+    const sorted = [...showItemsList].sort((a, b) => a.addedAt - b.addedAt);
+    let clusterStart = 0;
+    let clusterIndex = 0;
+    for (let i = 1; i <= sorted.length; i++) {
+      const atBoundary = i === sorted.length || sorted[i].addedAt - sorted[i - 1].addedAt > CLUSTER_GAP_SECONDS;
+      if (atBoundary) {
+        clusters.push({ key: `${showKey}#${clusterIndex}`, items: sorted.slice(clusterStart, i) });
+        clusterStart = i;
+        clusterIndex += 1;
+      }
+    }
+  }
+
+  return clusters.sort((a, b) => Math.max(...b.items.map((i) => i.addedAt)) - Math.max(...a.items.map((i) => i.addedAt)));
 }
 
 async function runWithConcurrency<T>(items: T[], limit: number, worker: (item: T) => Promise<void>): Promise<void> {
