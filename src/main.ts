@@ -1,10 +1,13 @@
 import './style.css';
 import { clearServer, getAccountToken, getServer, signOut } from './state/session';
+import { resetIdleActivity, startIdleTimer } from './state/idleTimer';
 import { renderLoginView } from './views/loginView';
 import { renderServerPickerView } from './views/serverPickerView';
 import { renderLibraryView } from './views/libraryView';
 import { renderHeader } from './ui/header';
 import { el, mount } from './ui/dom';
+
+const IDLE_TIMEOUT_MS = 60 * 60 * 1000; // 1 hour
 
 const root = document.querySelector<HTMLDivElement>('#app')!;
 
@@ -36,12 +39,14 @@ function showLogin(): void {
 }
 
 function showServerPicker(): void {
+  resetIdleActivity();
   activeView = 'picker';
   content.replaceChildren(renderServerPickerView({ onConnected: showLibrary, onManualInstead: showLogin }));
   header.refresh();
 }
 
 function showLibrary(): void {
+  resetIdleActivity();
   activeView = 'library';
   content.replaceChildren(renderLibraryView());
   header.refresh();
@@ -56,5 +61,12 @@ function routeInitial(): void {
     showLogin();
   }
 }
+
+startIdleTimer(() => {
+  if (getAccountToken() || getServer()) {
+    signOut();
+    showLogin();
+  }
+}, IDLE_TIMEOUT_MS);
 
 routeInitial();

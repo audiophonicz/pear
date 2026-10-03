@@ -34,10 +34,20 @@ jobs:
     name: SonarCloud Scan
     needs: [lint-format, type-check]
     runs-on: ubuntu-latest
+    # Fork PRs don't get repo secrets, so SONAR_TOKEN is unavailable and this job
+    # would just fail with an auth error -- skip it entirely for forks instead of
+    # showing external contributors a check they have no way to fix.
+    if: github.event.pull_request.head.repo.full_name == github.repository
     steps:
       - uses: actions/checkout@v7
         with:
           fetch-depth: 0
+      - uses: actions/setup-node@v7
+        with:
+          node-version: '22'
+          cache: 'npm'
+      - run: npm ci
+      - run: npm run test
       - uses: sonarsource/sonarqube-scan-action@v6
         env:
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}

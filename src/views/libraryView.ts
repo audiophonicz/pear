@@ -21,7 +21,7 @@ const RECENTLY_ADDED_FETCH_LIMIT = 100;
 // directly against a live library (bulk clusters: same-second; weekly: ~7.0 days
 // apart, consistently, across every real weekly show checked), so its exact value
 // isn't sensitive -- it just needs to separate "seconds" from "days".
-const CLUSTER_GAP_SECONDS = 24 * 60 * 60;
+export const CLUSTER_GAP_SECONDS = 24 * 60 * 60;
 
 // Two rows (Movies/TV), Plex-dashboard style, is the current layout. The original
 // single vertical scrolling list with All/Movies/TV chips is kept below rather than
@@ -37,7 +37,7 @@ function displayType(item: RecentItem): TypeFilter {
 /** Stable id for "which show does this belong to", so multiple recently-added
  * episodes/seasons for the same show can be grouped -- title text alone risks
  * collisions between different shows that happen to share a name. */
-function showGroupKey(item: RecentItem): string | null {
+export function showGroupKey(item: RecentItem): string | null {
   if (item.type === 'episode') return item.grandparentRatingKey ?? null;
   if (item.type === 'season') return item.parentRatingKey ?? null;
   return null;
@@ -45,13 +45,13 @@ function showGroupKey(item: RecentItem): string | null {
 
 /** Season number: Plex reuses "index" for a season's own number, and "parentIndex"
  * for an episode's containing season number -- two different fields, same concept. */
-function seasonNumberOf(item: RecentItem): number | undefined {
+export function seasonNumberOf(item: RecentItem): number | undefined {
   if (item.type === 'episode') return item.parentIndex;
   if (item.type === 'season') return item.index;
   return undefined;
 }
 
-function showDisplayName(item: RecentItem): string {
+export function showDisplayName(item: RecentItem): string {
   if (item.type === 'episode') return item.grandparentTitle ?? item.title;
   if (item.type === 'season') return item.parentTitle ?? item.title;
   return item.title;
@@ -73,7 +73,7 @@ interface ShowGroup {
  * are represented within THAT cluster. A show can end up with multiple separate
  * cards this way: one for a bulk-added cluster, plus individual cards for any of
  * its episodes that arrived on a normal weekly schedule instead. */
-function groupShowItems(items: RecentItem[]): ShowGroup[] {
+export function groupShowItems(items: RecentItem[]): ShowGroup[] {
   const byShow = new Map<string, RecentItem[]>();
   for (const item of items) {
     const key = showGroupKey(item) ?? `item:${item.ratingKey}`;
