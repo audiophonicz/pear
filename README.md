@@ -1,6 +1,6 @@
 # PEAR
 
-**P**lex **E**ntity **A**dded**A**t **R**elocator
+**P**lex **E**ntity added**A**t **R**elocator
 
 DockerHub Link: https://hub.docker.com/r/audiophonicz/pear
 
@@ -8,7 +8,7 @@ Encountered a bug, or have a feature request? Log it here: https://github.com/au
 
 
 ## What is PEAR?
-Have you ever moved your folders, upgraded storage, or tdarr'd your media just to have Plex do an inopportune scan, and add something you've had forever back to Recently Added on your dashboard? Do you wish there was a quick and easy point-and-click way to fix that? Then PEAR is for you! PEAR allows you to connect to your Plex server and move or remove movies, episodes, seasons, or entire series in the Recently Added Movies and TV Shows lists.
+Have you ever moved your folders, upgraded storage, or re-encoded your media just to have Plex do an inopportune scan, and add something you've had forever back to Recently Added on your dashboard? Does that bother your OCD? Do you wish there was a quick and easy point-and-click way to fix that? Then PEAR is for you! PEAR allows you to connect to your Plex server and move or remove movies, episodes, seasons, or entire series in the Recently Added Movies and TV Shows lists.
 
 ## How do I use PEAR?
 PEAR runs entirely in your browser. There is no backend server beyond a
@@ -28,8 +28,13 @@ Two ways to connect:
 Once logged in you'll see the same Recently Added Movies and TV Shows lists you'd see on your classic Plex dashboard, up to date and complete with posters. Simply select one or more items from either or both lists, select a relocation option, and click the Relocate button! You can relocate based on the original release date of the item (according to plex), push (add) a specified amount of days to its current addedAt value, or select a specific date using the calender popup.
 
 
+<p align="center">
+  <img src="pear_screenshot.gif" alt="PEAR Screenshot" width="800">
+</p>
+
+
 ## About PEAR
-I've been using cglatot's [PASTA](https://github.com/cglatot/pasta) tool for years, and love how simple it is to use. When I went to figure out how to fix some erroneous items in my Recently Added lists, all I found was installing entire cli tools to do a simple task, or some containers specific for my need but havent been updated in forever, or worse yet, the suggestion to edit a SQLite DB directly. I was used to PASTA and wanted something just as easy to use. So, in homage to PASTA, I set out with my trusty claude-code to build a companion app with a similar look and feel, that can be used to quickly and easily fix those one-off mistakes and put your OCD at ease. If you like PEAR,
+I've been using cglatot's [PASTA](https://github.com/cglatot/pasta) tool for years, and love how simple it is to use. When I went to figure out how to fix some erroneous items in my Recently Added lists, all I found was installing entire cli tools to do a simple task, or some containers specific for my need but havent been updated in forever, or worse yet, the suggestion to edit a SQLite DB directly. I was accustomed PASTA and wanted something just as easy to use. So, in homage to PASTA, I set out with my trusty claude-code to build a companion app with a similar look and feel, that can be used to quickly and easily fix those one-off mistakes and put your OCD at ease. If you like PEAR,
 go check out [PASTA](https://github.com/cglatot/pasta) too.
 
 
