@@ -12,7 +12,7 @@ Have you ever moved your folders, upgraded storage, or re-encoded your media jus
 
 ## How do I use PEAR?
 PEAR runs entirely in your browser. There is no backend server beyond a
-static file host — the app calls `plex.tv` for sign-in and your Plex Media
+static file host — the app calls Plex.tv for sign-in and your Plex Media
 Server directly for everything else, the same way Plex Web itself does.
 Nothing is sent to any third party.
 
@@ -25,7 +25,7 @@ Two ways to connect:
   directly, for servers that don't show up in discovery (custom domains,
   relay-only, firewalled, etc).
 
-Once logged in you'll see the same Recently Added Movies and TV Shows lists you'd see on your classic Plex dashboard, up to date and complete with posters. Simply select one or more items from either or both lists, select a relocation option, and click the Relocate button! You can relocate based on the original release date of the item (according to plex), push (add) a specified amount of days to its current addedAt value, or select a specific date using the calendar popup.
+Once logged in you'll see the same Recently Added Movies and TV Shows lists you'd see on your classic Plex dashboard, up to date and complete with posters. Simply select one or more items from either or both lists, select a relocation option, and click the Relocate button! You can relocate based on the original release date of the item (according to Plex), push (add) a specified amount of days to its current addedAt value, or select a specific date using the calendar popup.
 
 
 <p align="center">
