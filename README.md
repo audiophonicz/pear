@@ -18,14 +18,14 @@ Nothing is sent to any third party.
 
 Two ways to connect:
 
-- **Sign in with Plex** — standard email and password auth, then pick a
+- **Sign in with Plex.tv** — standard email and password auth, then pick a
   discovered server (with a "prefer local address" option, same idea as
   connecting from Plex Web on your home network).
 - **Connect manually** — type a server address and an `X-Plex-Token`
   directly, for servers that don't show up in discovery (custom domains,
   relay-only, firewalled, etc).
 
-Once logged in you'll see the same Recently Added Movies and TV Shows lists you'd see on your classic Plex dashboard, up to date and complete with posters. Simply select one or more items from either or both lists, select a relocation option, and click the Relocate button! You can relocate based on the original release date of the item (according to plex), push (add) a specified amount of days to its current addedAt value, or select a specific date using the calender popup.
+Once logged in you'll see the same Recently Added Movies and TV Shows lists you'd see on your classic Plex dashboard, up to date and complete with posters. Simply select one or more items from either or both lists, select a relocation option, and click the Relocate button! You can relocate based on the original release date of the item (according to plex), push (add) a specified amount of days to its current addedAt value, or select a specific date using the calendar popup.
 
 
 <p align="center">
@@ -34,7 +34,7 @@ Once logged in you'll see the same Recently Added Movies and TV Shows lists you'
 
 
 ## About PEAR
-I've been using cglatot's [PASTA](https://github.com/cglatot/pasta) tool for years, and love how simple it is to use. When I went to figure out how to fix some erroneous items in my Recently Added lists, all I found was installing entire cli tools to do a simple task, or some containers specific for my need but havent been updated in forever, or worse yet, the suggestion to edit a SQLite DB directly. I was accustomed PASTA and wanted something just as easy to use. So, in homage to PASTA, I set out with my trusty claude-code to build a companion app with a similar look and feel, that can be used to quickly and easily fix those one-off mistakes and put your OCD at ease. If you like PEAR,
+I've been using cglatot's [PASTA](https://github.com/cglatot/pasta) tool for years, and love how simple it is to use. When I went to figure out how to fix some erroneous items in my Recently Added lists, all I found was installing entire cli tools to do a simple task, or some containers specific for recent items lists but haven't been updated in forever, or worse yet, the suggestion to edit a SQLite DB directly. I was accustomed to PASTA and wanted something just as easy to use. So, in homage to PASTA, I set out with my trusty claude-code to build a companion app with a similar look and feel, that can be used to quickly and easily fix those one-off mistakes and put your OCD at ease. If you like PEAR,
 go check out [PASTA](https://github.com/cglatot/pasta) too.
 
 
