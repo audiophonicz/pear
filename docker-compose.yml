@@ -1,7 +1,6 @@
 services:
   pear:
-    build: .
-    # or once published: image: ghcr.io/audiophonicz/pear:latest
+    image: ghcr.io/audiophonicz/pear:latest
     container_name: pear
     ports:
       - "8088:80"
