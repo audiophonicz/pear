@@ -171,5 +171,5 @@ jobs:
           context: .
           push: true
           tags: |
-            docker.io/audiophonicz/pear:latest
-            docker.io/audiophonicz/pear:${{ github.event.release.tag_name }}
+            docker.io/natepalm/pear:latest
+            docker.io/natepalm/pear:${{ github.event.release.tag_name }}
