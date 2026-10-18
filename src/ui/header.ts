@@ -6,9 +6,7 @@ import { fetchAccount } from '../plex/api';
 import { getAccountToken, getAccountUsername, getClientId, getServer, setAccountUsername } from '../state/session';
 
 const GITHUB_URL = 'https://github.com/audiophonicz/pear';
-// TODO: point at the actual image registry page once one is set up; hub.docker.com
-// itself for now since there's no published image there yet.
-const DOCKER_URL = 'https://hub.docker.com';
+const DOCKER_URL = 'https://hub.docker.com/r/audiophonicz/pear';
 
 function iconLink(icon: SVGSVGElement, href: string, label: string): HTMLAnchorElement {
   return el('a', { class: 'icon-btn', attrs: { href, target: '_blank', rel: 'noopener', 'aria-label': label } }, [icon]) as HTMLAnchorElement;
