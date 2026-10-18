@@ -34,10 +34,12 @@ jobs:
     name: SonarCloud Scan
     needs: [lint-format, type-check]
     runs-on: ubuntu-latest
-    # Fork PRs don't get repo secrets, so SONAR_TOKEN is unavailable and this job
-    # would just fail with an auth error -- skip it entirely for forks instead of
-    # showing external contributors a check they have no way to fix.
-    if: github.event.pull_request.head.repo.full_name == github.repository
+    # Fork PRs and Dependabot PRs both don't get repo Actions secrets (Dependabot
+    # has its own separate secret store), so SONAR_TOKEN is unavailable and this
+    # job would just fail with an auth error -- skip it entirely for both instead
+    # of showing a check nobody can fix. A job skipped via `if:` reports as
+    # "Success" for required-status-check purposes, so this doesn't block merging.
+    if: github.event.pull_request.head.repo.full_name == github.repository && github.actor != 'dependabot[bot]'
     steps:
       - uses: actions/checkout@v7
         with:
