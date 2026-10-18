@@ -6,7 +6,7 @@ import { fetchAccount } from '../plex/api';
 import { getAccountToken, getAccountUsername, getClientId, getServer, setAccountUsername } from '../state/session';
 
 const GITHUB_URL = 'https://github.com/audiophonicz/pear';
-const DOCKER_URL = 'https://hub.docker.com/r/audiophonicz/pear';
+const DOCKER_URL = 'https://hub.docker.com/r/natepalm/pear';
 
 function iconLink(icon: SVGSVGElement, href: string, label: string): HTMLAnchorElement {
   return el('a', { class: 'icon-btn', attrs: { href, target: '_blank', rel: 'noopener', 'aria-label': label } }, [icon]) as HTMLAnchorElement;
