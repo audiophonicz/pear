@@ -105,6 +105,22 @@ function renderManualPanel(onConnected: () => void): HTMLElement {
       statusArea.replaceChildren(statusBanner('error', 'Server address and token are both required.'));
       return;
     }
+    // This app is deliberately open to any address the user types -- there's no
+    // fixed host allowlist to check against, since "connect to your own
+    // self-hosted server at whatever address it's on" is the whole feature.
+    // Still worth rejecting non-http(s) schemes outright (javascript:, data:,
+    // file:, etc.) rather than letting an unvalidated string reach fetch().
+    let parsedUrl: URL;
+    try {
+      parsedUrl = new URL(url);
+    } catch {
+      statusArea.replaceChildren(statusBanner('error', 'Enter a valid server address, e.g. http://192.168.1.10:32400.'));
+      return;
+    }
+    if (parsedUrl.protocol !== 'http:' && parsedUrl.protocol !== 'https:') {
+      statusArea.replaceChildren(statusBanner('error', 'Server address must use http or https.'));
+      return;
+    }
     connectButton.disabled = true;
     statusArea.replaceChildren(statusBanner('info', 'Connecting…'));
     try {
