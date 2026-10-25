@@ -231,7 +231,8 @@ export function renderLibraryView(): HTMLElement {
       const first = group.items[0];
       const showName = showDisplayName(first);
       const seasonCount = new Set(group.items.map(seasonNumberOf).filter((n): n is number => n !== undefined)).size;
-      const secondary = seasonCount > 0 ? `${seasonCount} Season${seasonCount === 1 ? '' : 's'}` : '';
+      const seasonLabel = seasonCount === 1 ? 'Season' : 'Seasons';
+      const secondary = seasonCount > 0 ? `${seasonCount} ${seasonLabel}` : '';
 
       const thumbSrc = thumbUrl(posterPath(first));
       const poster = thumbSrc
@@ -399,7 +400,9 @@ export function renderLibraryView(): HTMLElement {
     const targets = Array.from(selected).flatMap((id) => groupMembership.get(id) ?? []);
     if (targets.length === 0) return;
 
-    const mode: 'original' | 'days' | 'date' = modeOriginal.checked ? 'original' : modeDays.checked ? 'days' : 'date';
+    let mode: 'original' | 'days' | 'date' = 'date';
+    if (modeOriginal.checked) mode = 'original';
+    else if (modeDays.checked) mode = 'days';
     let days = 0;
     let absoluteTarget = 0;
     if (mode === 'days') {

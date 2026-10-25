@@ -23,7 +23,8 @@ function accountHeaders(clientId: string, token?: string): Record<string, string
 async function asJson<T>(res: Response): Promise<T> {
   if (!res.ok) {
     const body = await res.text().catch(() => '');
-    throw new Error(`${res.status} ${res.statusText}${body ? `: ${body}` : ''}`);
+    const suffix = body ? `: ${body}` : '';
+    throw new Error(`${res.status} ${res.statusText}${suffix}`);
   }
   return res.json() as Promise<T>;
 }
@@ -180,6 +181,7 @@ export async function relocateAddedAt(
   const res = await fetch(url, { method: 'PUT' });
   if (!res.ok) {
     const body = await res.text().catch(() => '');
-    throw new Error(`Failed to update ${item.ratingKey}: ${res.status} ${res.statusText}${body ? ` - ${body}` : ''}`);
+    const suffix = body ? ` - ${body}` : '';
+    throw new Error(`Failed to update ${item.ratingKey}: ${res.status} ${res.statusText}${suffix}`);
   }
 }
