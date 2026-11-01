@@ -15,7 +15,7 @@ function randomId(): string {
   if ('randomUUID' in crypto) return crypto.randomUUID();
   // Fallback for non-secure-context browsers without crypto.randomUUID
   return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, (c) => {
-    const r = (Math.random() * 16) | 0;
+    const r = Math.trunc(Math.random() * 16);
     const v = c === 'x' ? r : (r & 0x3) | 0x8;
     return v.toString(16);
   });
@@ -70,9 +70,12 @@ export function getPreferLocal(): boolean {
   return localStorage.getItem(KEYS.preferLocal) === '1';
 }
 
-export function setPreferLocal(value: boolean): void {
-  if (value) localStorage.setItem(KEYS.preferLocal, '1');
-  else localStorage.removeItem(KEYS.preferLocal);
+export function enablePreferLocal(): void {
+  localStorage.setItem(KEYS.preferLocal, '1');
+}
+
+export function disablePreferLocal(): void {
+  localStorage.removeItem(KEYS.preferLocal);
 }
 
 export function signOut(): void {

@@ -132,8 +132,10 @@ body {
   text-decoration: underline;
 }
 
-.hidden {
-  display: none !important;
+/* Specificity-bumped via the attribute selector, rather than !important, so this
+   still reliably wins against every other single-class display rule in this file. */
+[class].hidden {
+  display: none;
 }
 
 .divider {

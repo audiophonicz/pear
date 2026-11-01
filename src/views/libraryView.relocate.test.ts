@@ -38,7 +38,7 @@ async function renderWithItems(items: RecentItem[]): Promise<HTMLElement> {
   vi.mocked(fetchSectionRecentlyAdded).mockResolvedValue(items);
 
   const root = renderLibraryView();
-  await vi.waitFor(() => expect(root.querySelectorAll('.dash-card').length).toBe(items.length));
+  await vi.waitFor(() => expect(root.querySelectorAll('.dash-card')).toHaveLength(items.length));
   return root;
 }
 

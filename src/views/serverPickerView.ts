@@ -1,6 +1,6 @@
 import { checkServer, fetchDevices } from '../plex/api';
 import type { PlexConnection, PlexDevice } from '../plex/types';
-import { getClientId, getPreferLocal, setPreferLocal, getAccountToken, setServer } from '../state/session';
+import { disablePreferLocal, enablePreferLocal, getClientId, getPreferLocal, getAccountToken, setServer } from '../state/session';
 import { el, statusBanner } from '../ui/dom';
 
 interface ServerPickerProps {
@@ -46,7 +46,10 @@ export function renderServerPickerView({ onConnected, onManualInstead }: ServerP
 
   const preferLocalCheckbox = el('input', { attrs: { type: 'checkbox', id: 'preferLocal' } }) as HTMLInputElement;
   preferLocalCheckbox.checked = getPreferLocal();
-  preferLocalCheckbox.addEventListener('change', () => setPreferLocal(preferLocalCheckbox.checked));
+  preferLocalCheckbox.addEventListener('change', () => {
+    if (preferLocalCheckbox.checked) enablePreferLocal();
+    else disablePreferLocal();
+  });
 
   const manualLink = el('button', { class: 'btn btn-ghost', text: 'Enter a server address manually instead' });
   manualLink.addEventListener('click', onManualInstead);
